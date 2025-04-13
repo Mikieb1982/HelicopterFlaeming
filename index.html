@@ -178,7 +178,7 @@
     <div id="land-indicator">Nearby: <span id="poi-name">POI</span><br>Press 'L' to Land</div>
 
     <div id="map-container">
-        <img id="map-image" class="loading" src="hoher_flaeming_map.jpg" alt="Hoher Fläming Map">
+        <img id="map-image" class="loading" src="Heli Fläming/hoher_flaeming_map.jpg" alt="Hoher Fläming Map">
         <div id="helicopter">🚁</div>
     </div>
 
@@ -296,7 +296,8 @@
         // Handles errors during map image loading
         mapImage.onerror = () => {
             console.error("DEBUG: mapImage.onerror fired!");
-            debugInfo.textContent = "Error loading map image! Check: 1. Name='hoher_flaeming_map.jpg'? 2. SAME folder as HTML? 3. Check Console & Network tab (F12).";
+            // *** MODIFIED: Updated error message to reflect the path check ***
+            debugInfo.textContent = "Error loading map image! Check: 1. Path='Heli Fläming/hoher_flaeming_map.jpg'? 2. Is 'Heli Fläming' folder next to HTML? 3. Check Console & Network tab (F12).";
             debugInfo.style.display = 'block'; // Show error message
             mapImage.classList.remove('loading');
             mapImage.classList.add('error'); // Apply error styling
