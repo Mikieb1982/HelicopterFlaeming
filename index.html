@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Hoher Fläming POI Explorer (Mobile)</title>
+    <title>Hoher Fläming POI Explorer (Joystick)</title>
     <style>
         /* Basic page styling */
         html, body {
@@ -11,7 +11,7 @@
             height: 100%; width: 100%;
             background-color: #2c2c2c;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
-            position: relative;
+            position: relative; /* Needed for fixed/absolute positioning */
         }
 
         /* Map Container */
@@ -33,18 +33,15 @@
         #map-image.loading { opacity: 0; }
         #map-image.error { opacity: 0.2; }
 
-        /* Helicopter - SET TO 60px, Origin Top-Center, NO dynamic rotation */
+        /* Helicopter - Rotation re-enabled */
         #helicopter {
             position: absolute;
             width: 60px; height: 60px;
             font-size: 60px; line-height: 60px;
             text-align: center;
-            /* Rotate around the top-center (nose) */
-            transform-origin: center top;
-             /* Position top-left corner at (x,y), then translate X by -50% to center horizontally relative to origin, no Y translate needed. Rotation removed here, applied in JS render */
-            transform: translate(-50%, 0%); /* Initial transform without rotation */
-            /* Rotation transition removed as it's no longer applied dynamically */
-            /* transition: transform 0.05s linear; */
+            transform-origin: center top; /* Origin at nose */
+            transform: translate(-50%, 0%) rotate(0deg); /* Initial transform */
+            transition: transform 0.05s linear; /* Smooth rotation */
             z-index: 10; pointer-events: none;
         }
 
@@ -61,7 +58,7 @@
 
         /* Debug Info */
         #debug-info {
-            position: fixed; bottom: 90px;
+            position: fixed; bottom: 150px; /* Position above joystick */
             left: 8px; background-color: rgba(200, 0, 0, 0.8); color: #fff;
             padding: 5px 8px; border-radius: 3px; font-size: 10px;
             z-index: 30; display: none; pointer-events: none;
@@ -69,10 +66,9 @@
 
         /* Land Indicator */
         #land-indicator {
-            position: fixed; bottom: 90px;
+            position: fixed; bottom: 90px; /* Keep above land button */
             left: 50%; transform: translateX(-50%);
-            background-color: rgba(255, 193, 7, 0.9);
-            color: #000;
+            background-color: rgba(255, 193, 7, 0.9); color: #000;
             padding: 6px 12px; border-radius: 4px; font-size: 14px;
             font-weight: bold; z-index: 20; display: none;
             text-align: center; pointer-events: none;
@@ -92,8 +88,7 @@
 
         /* Info Content Box */
         #info-content {
-            background-color: #e0e0e0;
-            color: #333; padding: 25px; border-radius: 6px;
+            background-color: #e0e0e0; color: #333; padding: 25px; border-radius: 6px;
             width: 90%; max-height: 85%; overflow-y: auto;
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4); position: relative;
             border: 1px solid #bbb;
@@ -113,45 +108,56 @@
         #return-button:hover { background: linear-gradient(to bottom, #80888f, #5a6268); }
         #return-button:active { box-shadow: inset 0 1px 3px rgba(0,0,0,0.3); }
 
-        /* Simplified Touch Controls Styling */
-        #touch-controls {
-            position: fixed; bottom: 15px; left: 0; width: 100%;
-            display: flex; justify-content: space-between; align-items: flex-end;
-            z-index: 35; pointer-events: none; padding: 0 20px;
-            box-sizing: border-box;
+        /* --- Joystick Styling --- */
+        #joystick-container {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            width: 120px; /* Size of the joystick area */
+            height: 120px;
+            z-index: 35;
+            /* Allow touches to pass through container unless on base/handle */
+            pointer-events: none;
         }
-
-        /* Base style for control buttons */
-        #touch-controls button {
-            background: linear-gradient(to bottom, #4a4a4a, #303030);
-            border: 1px solid #666;
-            border-radius: 8px;
-            width: 60px; height: 60px;
-            cursor: pointer; display: flex; justify-content: center; align-items: center;
-            pointer-events: auto; user-select: none; -webkit-user-select: none;
-            touch-action: manipulation;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.05);
-            transition: transform 0.08s ease, box-shadow 0.08s ease, background 0.08s ease;
+        #joystick-base {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: rgba(80, 80, 80, 0.5); /* Semi-transparent base */
+            border: 2px solid rgba(200, 200, 200, 0.6);
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.3);
+            pointer-events: auto; /* Base can receive touch start */
         }
-        /* SVG Icon Styling */
-        #touch-controls button svg {
-            width: 60%; height: 60%; fill: #e0e0e0;
+        #joystick-handle {
+            position: absolute;
+            width: 60px; /* Handle size */
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(to bottom, #5a5a5a, #333);
+            border: 1px solid #777;
+            box-shadow: 0 3px 5px rgba(0,0,0,0.4), inset 0 1px 1px rgba(255,255,255,0.1);
+            /* Centered by default */
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: auto; /* Handle receives touch */
+            cursor: grab;
+            touch-action: none; /* Prevent browser default touch actions */
         }
+         #joystick-handle:active {
+             cursor: grabbing;
+             background: linear-gradient(to top, #5a5a5a, #333);
+             box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
+         }
 
-        /* Pressed state */
-        #touch-controls button:active {
-            background: linear-gradient(to top, #4a4a4a, #303030);
-            box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.4);
-            transform: scale(0.94);
-        }
-        #touch-controls button:active svg { fill: #fff; }
-
-        .touch-group-left { display: flex; gap: 25px; }
-        .touch-group-right { display: flex; justify-content: center; }
-
-        /* Land Button */
+        /* Land Button - Position adjusted if needed */
         #land-button {
-            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            position: fixed;
+            bottom: 20px;
+            /* Position on the right side */
+            right: 20px;
+            /* left: 50%; transform: translateX(-50%); */ /* Remove centering */
             width: 70px; height: 50px; border-radius: 6px;
             font-size: 16px; font-weight: bold; text-transform: uppercase;
             background: linear-gradient(to bottom, #ffcc00, #cca300); color: #212529;
@@ -165,7 +171,9 @@
          #land-button:active {
              background: linear-gradient(to top, #ffcc00, #cca300);
              box-shadow: 0 0 0 3px #333, 0 0 0 5px #555, inset 0 3px 5px rgba(0, 0, 0, 0.3);
-             transform: translateX(-50%) scale(0.95); color: #000;
+             /* transform: translateX(-50%) scale(0.95); */ /* Remove centering */
+             transform: scale(0.95);
+             color: #000;
          }
 
     </style>
@@ -194,19 +202,11 @@
         </div>
     </div>
 
-    <div id="touch-controls">
-        <div class="touch-group-left"> <button id="touch-left" aria-label="Turn Left">
-                <svg viewBox="0 0 24 24"><path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6 1.41-1.41z"/></svg>
-            </button>
-            <button id="touch-right" aria-label="Turn Right">
-                <svg viewBox="0 0 24 24"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></svg>
-            </button>
-        </div>
-        <div class="touch-group-right"> <button id="touch-forward" aria-label="Thrust Forward">
-                 <svg viewBox="0 0 24 24"><path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6 1.41 1.41z"/></svg>
-            </button>
-        </div>
+    <div id="joystick-container">
+        <div id="joystick-base"></div>
+        <div id="joystick-handle"></div>
     </div>
+
     <button id="land-button" aria-label="Land">Land</button>
 
 
@@ -226,10 +226,11 @@
         const infoTitle = document.getElementById('info-title');
         const infoDescription = document.getElementById('info-description');
         const returnButton = document.getElementById('return-button');
-        const touchControlsContainer = document.getElementById('touch-controls');
-        const touchLeft = document.getElementById('touch-left');
-        const touchRight = document.getElementById('touch-right');
-        const touchForward = document.getElementById('touch-forward');
+        // Joystick elements
+        const joystickContainer = document.getElementById('joystick-container');
+        const joystickBase = document.getElementById('joystick-base');
+        const joystickHandle = document.getElementById('joystick-handle');
+        // Land button
         const landButton = document.getElementById('land-button');
 
         console.log("Script starting...");
@@ -238,12 +239,13 @@
         const MAP_WIDTH = 2048; const MAP_HEIGHT = 1448;
         console.log(`Configured map dimensions: ${MAP_WIDTH}x${MAP_HEIGHT}`);
         const startX = 1364; const startY = 603;
-        const turnRate = 3.0;
-        const forwardThrustPower = 0.15;
+        const turnRate = 3.0; // Degrees per frame when turning
+        const forwardThrustPower = 0.15; // Base acceleration power
         const maxSpeed = 5.0;
         const drag = 0.98;
         const minSpeed = 0.05;
         const landingRadius = 60;
+        const joystickMaxRadius = joystickBase.offsetWidth / 2 - joystickHandle.offsetWidth / 2; // Max distance handle can move
 
         // --- POI Data (Unchanged) ---
         const pointsOfInterest = [ { id: 1, name: "Stadt und Burg Ziesar", x: 470, y: 150, description: "Auf der Burg Ziesar befindet sich das Museum für brandenburgische Kirchen- und Kulturgeschichte des Mittelalters und die Touristinformation. Sehenswert sind hier auch die Schlosskapelle und der der weite Blick vom Storchenturm über den Ziesorer Vorfläming. Aber auch ein Spaziergang durch den historischen Stadtkern lohnt sich.\nTouristinformation Ziesar\n14793 Ziesar, Mühlentor 15A\nTel.: 033830 12735\nwww.burg-ziesar.de" }, { id: 2, name: "Gutspark Dahlen", x: 708, y: 357, description: "Der Gutspark erschließt sich auf einem kurzen Rundweg, wobei die Spazierende um den Schwanenteich besonders reizvoll ist. Zudem kann der Bauerngarten mit Kräutern und Duftpflanzen besucht werden. Gleich gegenüber dem Gutspark steht, etwas versteckt, eine sehenswerte Fachwerkkirche.\nWer gern Rad fährt, dem sei die Ton & Töpfe-Radtour empfohlen, die durch Dahlen führt." }, { id: 3, name: "Klein Briesener Bach mit Artesischem Brunnen", x: 998, y: 181, description: "Der Artesische Brunnen ist im idyllischen Örtchen Klein Briesen zu finden. Das Wasser steigt hier nur durch seinen Eigendruck empor und wird dem Klein Briesener Bach zugeführt. Wandernde können dem sich schlängelnden Bach auf dem Burgenwanderweg bis Ragösen folgen.\nEin Abstecher zur Fachwerkkirche in Klein Briesen lohnt genauso wie die Wanderung bis zum Aussichtsturm 'Schöne Aussicht'." }, { id: 4, name: "Paradies Dippmannsdorf", x: 1322, y: 265, description: "Hier sprudelt aus einigen Dutzend Quellen glasklares Wasser, das die Mühlenteiche speist. Der von alten Buchen, Eichen und Erlen bestandene Quelltopf wurde vorsichtig erschlossen. Ein Spaziergang lohnt sich zu jeder Jahreszeit und lässt sich gut mit einer Wanderung auf dem Kindererlebnispfad verbinden, der hier auf dem Burgenwanderweg verläuft.\nGleich nebenan verwöhnt die Gaststätte 'Paradies' seine Gäste." }, { id: 5, name: "Töpferort Görzke", x: 416, y: 439, description: "Ein Besuch der kleinen Museen und des Hofladens auf dem Handwerkerhof, ein kleiner Bummel entlang der Bauerngärten hinüber zum slawischen Burgwall und die Einkaufsmöglichkeiten in fünf Töpfereien lohnen den Besuch des Flämingortes.\nAuf dem Töpferwanderweg werden Wandernde mit weitläufigen Ausblicken auf das Tal der Buckau und die umliegende Fläminglandschaft belohnt." }, { id: 6, name: "Hagelberg", x: 946, y: 719, description: "Der Hagelberg, ein echter 'Zweihunderter', lädt zum Eintrag ins Gipfelbuch ein – nicht ohne Grund wird die Landschaft im Hohen Fläming auch mit einem Augenzwinkern das 'kleinste Mittelgebirge Deutschlands' genannt. Für den 'Aufstieg' zum Gipfelkreuz wird man mit einem schönen Blick über die Fläminglandschaft belohnt.\nUnweit davon öffnet am Wochenende auf dem historischen Gutshof in Klein Glien ein Café für Ausflüglerinnen und Ausflügler." }, { id: 7, name: "Bad Belzig mit Burg Eisenhardt", x: 1364, y: 603, description: "Auf der Burg Eisenhardt lässt sich die 1000-jährige Geschichte der Stadt hautnah erkunden. Vom Butterturm bietet sich wohl der schönste Ausblick auf Stadt und Umgebung. Unterhalb der Burg befinden sich die Burgwiesen, auf denen der barrierefreie Naturerlebnispfad die Lust zum Mitmachen weckt. In der SteinTherme sorgt jodhaltiges Thermalwasser für gesunde Entspannung.\nTourristinformation\n14806 Bad Belzig, Marktplatz 1\nTel.: 033841 94900\nwww.bad-belzig.de" }, { id: 8, name: "Aussichtspunkt Belziger Landschaftswiesen", x: 1616, y: 501, description: "Am Europaradweg R1 gelegen, bietet sich ein beeindruckender Blick in das Niederungsgebiet der Belziger Landschaftswiesen. Dort befindet sich eines der wichtigsten Vogelschutzgebiete Brandenburgs.\nWenn im Winterhalbjahr Großtrappengruppen pflanzliche Nahrung suchen, bieten sich vom Rastplatz aus sehr gute Beobachtungsmöglichkeiten." }, { id: 9, name: "Wiesenburg mit Schloss und Park", x: 836, y: 843, description: "Das Schloss erhielt seine heutige Gestalt Ende des 19. Jahrhunderts. Vom Schlossturm hat man eine eindrucksvolle Aussicht auf Wiesenburg und seine Umgebung. Der größtenteils als Landschaftspark gestaltete Schlosspark ist die bedeutendste Parkanlage zwischen Sanssouci und Wörlitz. Bis zum Bahnhof erstreckt sich diese Anlage, durch die auch der Kunstwanderweg führt.\nTouristerei Wiesenburg\n14827 Wiesenburg/Mark, Schlossstr. 1\nTel.: 033849 79898\nwww.wiesenburgmark.de" }, { id: 10, name: "Naturparkzentrum Hoher Fläming", x: 1170, y: 1231, description: "Das Besucherinformationszentrum ist die zentrale Anlaufstelle für alle Gäste. Hier erhält man die besten Tipps für Exkursionen in den Hohen Fläming und kann Fahrräder ausleihen. Neben dem Fläming-Laden mit regionalen Produkten gibt es eine spannende Naturpark-Erlebnisausstellung und einen 'Garten der Sinne'. Direkt vor dem Naturparkzentrum hält der Bus der Burgenlinie.\nNaturparkzentrum Hoher Fläming\n14823 Raben, Brennereiweg 45\nTel.: 033848 60004\nwww.flaeming.net" }, { id: 11, name: "Raben mit Burg Rabenstein", x: 1124, y: 1329, description: "Auf dem 'Steilen Hagen' liegt die südlichste der Flämingburgen, die Höhenburg Rabenstein. Von der Burg führt ein Erlebnispfad durch das Naturschutzgebiet Rabenstein hinunter ins Dorf und bis zum Naturparkzentrum.\nDie tagsüber offene Feldsteinkirche kann auch besucht werden.\nDer Gasthof Hemmerling bewirtet täglich außer montags seine Gäste." }, { id: 12, name: "Niemegk", x: 1624, y: 1135, description: "Die Kirche St. Johannis und das alte Rathaus prägen das Stadtzentrum. Vom Kirchturm bietet sich ein schöner Ausblick auf die Hügelketten des Fläming. Ein imposanter Wasserturm, der heute ein Brausemuseum, einen Regionalladen und eine Likörmanufaktur beherbergt, liegen am südlichen Ortsausgang auf dem Rundwanderweg 44.\nEin Ausflug mit dem Rad lohnt sich von Niemegk aus auf der Feldsteinkirchenradtour, die zu sieben flämingtypischen Feldsteinkirchen führt." }, { id: 13, name: "Flämingbuchen", x: 654, y: 1171, description: "In dem großen Waldgebiet der Brandsheide sind einige Inseln aus Buchen zu finden, wie in den Naturschutzgebieten 'Flämingbuchen' und 'Spring'. Auf den Rundwanderwegen 70 oder 71 lassen sich diese landschaftlichen Höhepunkte des Naturparks erleben. Startpunkte sind die Bahnhöfe Wiesenburg/Mark oder Medewitz, die am RE 7 liegen. Auf dem Findlingswanderweg warten größere und kleinere Findlinge darauf entdeckt zu werden." }, { id: 14, name: "Brautrummel mit Riesenstein", x: 1110, y: 1023, description: "Wie eine Sage berichtet, ertrank ein junges Brautpaar nach einem Gewitterregen in der Rummel, einem Trockental.\nHeute kann man auf einer Rundwanderung zum Riesenstein die besondere Natur in der Rummel erleben, Familienfotos auf dem Riesenstein schießen, ein Picknick im Grünen genießen und anschließend ein Nickerchen auf dem großen Feldbett machen." }, { id: 15, name: "Neuendorfer Rummel", x: 1482, y: 1309, description: "Die Rummeln, verzweigte, enge Trockentälchen, entstanden nach der Eiszeit und wurden durch Wassererosion stetig weiter vertieft. Wie grüne, bewaldete Finger strecken sie sich weit in die Agrarlandschaft hinein.\nÜber den Burgenwanderweg oder den Rundwanderweg 40 kann man die üppig bewachsene und steilwandige Neuendorfer Rummel durchwandern." }, { id: 16, name: "Garrey mit Aussichtsplattform", x: 1494, y: 1427, description: "Die Landschaft rings um Garrey bietet fantastische Ausblicke auch über Teile des sachsen-anhaltinischen Naturparks. Deshalb 'krönt' eine Aussichtsplattform das alte Wasserwerk, das aufwändig restauriert wurde und in dem sich eine kleine Ausstellung befindet.\nDer Ausflug lässt sich sehr gut mit einer Wanderung in die Neuendorfer Rummel und einer Einkehr ins Café Lehmann in Garrey verbinden." } ];
@@ -251,7 +253,12 @@
 
         // --- Game State ---
         let helicopterState = { x: startX, y: startY, angle: -90, speed: 0 };
-        let controls = { turnLeft: false, turnRight: false, moveForward: false };
+        // Removed button controls, replaced by joystick state
+        let joystickState = {
+            active: false,      // Is the joystick being touched?
+            targetAngle: -90,   // Angle the joystick is pointing (degrees, -90 is up)
+            magnitude: 0        // How far the joystick is pushed (0 to 1)
+        };
         let lastTimestamp = 0; let gameReady = false; let currentNearbyPOI = null; let gameState = 'FLYING';
 
         // --- Image Loading Check (Unchanged) ---
@@ -259,57 +266,219 @@
         mapImage.onerror = () => { console.error("DEBUG: mapImage.onerror fired!"); debugInfo.textContent = "Error loading map image!"; debugInfo.style.display = 'block'; mapImage.classList.remove('loading'); mapImage.classList.add('error'); gameReady = false; console.log("DEBUG: gameReady is false due to image error."); };
         if (mapImage.complete && mapImage.naturalWidth > 0) { mapImage.onload(); } else if (mapImage.complete) { mapImage.onerror(); } else { console.log("DEBUG: Image not yet complete."); }
 
-        // --- Keyboard Control Listeners (Unchanged) ---
-        document.addEventListener('keydown', (event) => { if (gameState === 'SHOWING_INFO') return; if ((event.key === 'l' || event.key === 'L') && gameState === 'NEAR_POI' && currentNearbyPOI) { event.preventDefault(); landAndShowInfo(currentNearbyPOI); return; } switch (event.key) { case 'ArrowLeft': controls.turnLeft = true; break; case 'ArrowRight': controls.turnRight = true; break; case 'ArrowUp': controls.moveForward = true; break; } });
-        document.addEventListener('keyup', (event) => { if (gameState === 'SHOWING_INFO') return; switch (event.key) { case 'ArrowLeft': controls.turnLeft = false; break; case 'ArrowRight': controls.turnRight = false; break; case 'ArrowUp': controls.moveForward = false; break; } });
+        // --- Keyboard Control Listeners (Simplified for testing, less relevant now) ---
+        document.addEventListener('keydown', (event) => {
+            if (gameState === 'SHOWING_INFO') return;
+            if ((event.key === 'l' || event.key === 'L') && gameState === 'NEAR_POI' && currentNearbyPOI) {
+                event.preventDefault(); landAndShowInfo(currentNearbyPOI); return;
+            }
+            // Basic keyboard for testing angle/thrust
+            switch (event.key) {
+                case 'ArrowLeft': joystickState.targetAngle = (joystickState.targetAngle - 5 + 360) % 360; joystickState.active = true; break;
+                case 'ArrowRight': joystickState.targetAngle = (joystickState.targetAngle + 5) % 360; joystickState.active = true; break;
+                case 'ArrowUp': joystickState.magnitude = Math.min(1, joystickState.magnitude + 0.1); joystickState.active = true; break;
+                case 'ArrowDown': joystickState.magnitude = Math.max(0, joystickState.magnitude - 0.1); joystickState.active = true; break;
+            }
+        });
+         document.addEventListener('keyup', (event) => {
+             // Simplistic keyup handling for testing
+             // joystickState.active = false;
+             // joystickState.magnitude = 0;
+         });
 
-        // --- Touch Control Listeners (Unchanged) ---
-        function handleTouchStart(event, controlFlag) { event.preventDefault(); if (gameState !== 'SHOWING_INFO') controls[controlFlag] = true; }
-        function handleTouchEnd(event, controlFlag) { if (gameState !== 'SHOWING_INFO') controls[controlFlag] = false; }
-        touchLeft.addEventListener('touchstart', (e) => handleTouchStart(e, 'turnLeft'), { passive: false });
-        touchLeft.addEventListener('touchend', (e) => handleTouchEnd(e, 'turnLeft'));
-        touchRight.addEventListener('touchstart', (e) => handleTouchStart(e, 'turnRight'), { passive: false });
-        touchRight.addEventListener('touchend', (e) => handleTouchEnd(e, 'turnRight'));
-        touchForward.addEventListener('touchstart', (e) => handleTouchStart(e, 'moveForward'), { passive: false });
-        touchForward.addEventListener('touchend', (e) => handleTouchEnd(e, 'moveForward'));
-        landButton.addEventListener('touchstart', (event) => { event.preventDefault(); if (gameState === 'NEAR_POI' && currentNearbyPOI) landAndShowInfo(currentNearbyPOI); }, { passive: false });
 
-        // --- UI Button Listeners (Unchanged) ---
+        // --- Joystick Touch Listeners ---
+        let joystickActiveTouchId = null;
+        let baseRect = joystickBase.getBoundingClientRect();
+        let baseCenterX = baseRect.left + baseRect.width / 2;
+        let baseCenterY = baseRect.top + baseRect.height / 2;
+
+        function handleJoystickTouch(event) {
+            if (gameState === 'SHOWING_INFO') return;
+            event.preventDefault(); // Prevent page scroll/zoom
+
+            for (let i = 0; i < event.changedTouches.length; i++) {
+                let touch = event.changedTouches[i];
+
+                if (event.type === 'touchstart') {
+                    // Check if touch is starting on the handle or base
+                    if (joystickActiveTouchId === null && (touch.target === joystickHandle || touch.target === joystickBase)) {
+                        joystickActiveTouchId = touch.identifier;
+                        joystickState.active = true;
+                        updateJoystick(touch.clientX, touch.clientY);
+                    }
+                } else if (event.type === 'touchmove') {
+                    // Update only if this is the active touch
+                    if (touch.identifier === joystickActiveTouchId) {
+                        updateJoystick(touch.clientX, touch.clientY);
+                    }
+                } else if (event.type === 'touchend' || event.type === 'touchcancel') {
+                    // Reset if the active touch ended
+                    if (touch.identifier === joystickActiveTouchId) {
+                        joystickActiveTouchId = null;
+                        joystickState.active = false;
+                        joystickState.magnitude = 0; // Stop thrust
+                        // Reset handle position visually
+                        joystickHandle.style.transform = `translate(-50%, -50%)`;
+                        joystickHandle.style.left = `50%`;
+                        joystickHandle.style.top = `50%`;
+                    }
+                }
+            }
+        }
+
+        function updateJoystick(touchX, touchY) {
+            let deltaX = touchX - baseCenterX;
+            let deltaY = touchY - baseCenterY;
+
+            // Calculate angle (adjusting for atan2's range and coordinate system)
+            // Angle 0 is right, -90 is up, 90 is down
+            let angleRad = Math.atan2(deltaY, deltaX);
+            joystickState.targetAngle = angleRad * (180 / Math.PI); // Convert to degrees
+
+            // Calculate distance/magnitude
+            let distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+            let clampedDistance = Math.min(distance, joystickMaxRadius);
+
+            // Normalize magnitude (0 to 1)
+            joystickState.magnitude = clampedDistance / joystickMaxRadius;
+
+            // Calculate visual handle position (clamped)
+            let handleX = (Math.cos(angleRad) * clampedDistance);
+            let handleY = (Math.sin(angleRad) * clampedDistance);
+
+            // Position handle relative to base center (using percentages for responsiveness)
+            // Base center is 50%, 50%. Add offset, then account for handle's own centering transform.
+            joystickHandle.style.left = `calc(50% + ${handleX}px)`;
+            joystickHandle.style.top = `calc(50% + ${handleY}px)`;
+            // Keep the translate(-50%, -50%) to center the handle element itself
+            joystickHandle.style.transform = `translate(-50%, -50%)`;
+        }
+
+        // Add listeners to the document to catch touches anywhere initially
+        document.addEventListener('touchstart', handleJoystickTouch, { passive: false });
+        document.addEventListener('touchmove', handleJoystickTouch, { passive: false });
+        document.addEventListener('touchend', handleJoystickTouch, { passive: false });
+        document.addEventListener('touchcancel', handleJoystickTouch, { passive: false });
+
+        // Recalculate base center on resize
+        window.addEventListener('resize', () => {
+             baseRect = joystickBase.getBoundingClientRect();
+             baseCenterX = baseRect.left + baseRect.width / 2;
+             baseCenterY = baseRect.top + baseRect.height / 2;
+             joystickMaxRadius = joystickBase.offsetWidth / 2 - joystickHandle.offsetWidth / 2;
+        });
+
+
+        // --- UI Button Listeners ---
         returnButton.addEventListener('click', hideInfoAndResumeFlight);
+        landButton.addEventListener('touchstart', (event) => {
+            event.preventDefault();
+            if (gameState === 'NEAR_POI' && currentNearbyPOI) {
+                landAndShowInfo(currentNearbyPOI);
+            }
+        }, { passive: false });
+
 
         // --- Game Loop (Unchanged) ---
         function gameLoop(timestamp) { if (!lastTimestamp) lastTimestamp = timestamp; const deltaTime = (timestamp - lastTimestamp) / (1000 / 60); lastTimestamp = timestamp; if (gameReady && gameState !== 'SHOWING_INFO' && deltaTime > 0 && deltaTime < 10) { update(deltaTime); render(); centerViewOnHelicopter(); } requestAnimationFrame(gameLoop); }
 
-        // --- Update Logic (Unchanged) ---
-        function update(dt) { if (controls.turnLeft) helicopterState.angle -= turnRate * dt; if (controls.turnRight) helicopterState.angle += turnRate * dt; helicopterState.angle = (helicopterState.angle + 360) % 360; let acceleration = 0; if (controls.moveForward) { acceleration += forwardThrustPower; } helicopterState.speed += acceleration * dt; helicopterState.speed *= Math.pow(drag, dt); if (helicopterState.speed < minSpeed && !controls.moveForward) { helicopterState.speed = 0; } helicopterState.speed = Math.max(0, Math.min(helicopterState.speed, maxSpeed)); const angleRad = helicopterState.angle * (Math.PI / 180); const vx = Math.cos(angleRad) * helicopterState.speed; const vy = Math.sin(angleRad) * helicopterState.speed; helicopterState.x += vx * dt; helicopterState.y += vy * dt; helicopterState.x = Math.max(0, Math.min(MAP_WIDTH, helicopterState.x)); helicopterState.y = Math.max(0, Math.min(MAP_HEIGHT, helicopterState.y)); let foundNearbyPOI = null; for (const poi of pointsOfInterest) { const dx = helicopterState.x - poi.x; const dy = helicopterState.y - poi.y; if (Math.sqrt(dx * dx + dy * dy) < landingRadius) { foundNearbyPOI = poi; break; } } if (foundNearbyPOI) { if (gameState === 'FLYING') console.log(`DEBUG: Near POI ${foundNearbyPOI.id}`); gameState = 'NEAR_POI'; currentNearbyPOI = foundNearbyPOI; poiNameSpan.textContent = foundNearbyPOI.name; landIndicator.style.display = 'block'; landPrompt.style.display = 'inline'; landButton.style.display = 'flex'; } else { if (gameState === 'NEAR_POI') { console.log("DEBUG: Moved away from POI"); landIndicator.style.display = 'none'; landPrompt.style.display = 'none'; landButton.style.display = 'none'; currentNearbyPOI = null; } gameState = 'FLYING'; } }
+        // --- Update Logic (MODIFIED for joystick control) ---
+        function update(dt) {
+            // --- Rotation (Smoothly turn towards joystick angle) ---
+            if (joystickState.active) {
+                let currentAngle = helicopterState.angle;
+                let targetAngle = joystickState.targetAngle;
 
-        // --- Render Logic (MODIFIED to remove rotation) ---
+                // Calculate the shortest angle difference (-180 to 180)
+                let angleDiff = targetAngle - currentAngle;
+                while (angleDiff <= -180) angleDiff += 360;
+                while (angleDiff > 180) angleDiff -= 360;
+
+                // Apply turn rate, but don't overshoot
+                let turnAmount = turnRate * dt;
+                if (Math.abs(angleDiff) < turnAmount) {
+                    helicopterState.angle = targetAngle;
+                } else {
+                    helicopterState.angle += (angleDiff > 0 ? 1 : -1) * turnAmount;
+                }
+                helicopterState.angle = (helicopterState.angle + 360) % 360; // Normalize
+            }
+
+            // --- Speed / Acceleration (Based on joystick magnitude) ---
+            let acceleration = 0;
+            if (joystickState.active) {
+                // Scale thrust by joystick magnitude
+                acceleration += forwardThrustPower * joystickState.magnitude;
+            }
+            helicopterState.speed += acceleration * dt;
+            helicopterState.speed *= Math.pow(drag, dt); // Apply drag
+
+            if (helicopterState.speed < minSpeed && !joystickState.active) {
+                helicopterState.speed = 0;
+            }
+            helicopterState.speed = Math.max(0, Math.min(helicopterState.speed, maxSpeed));
+
+            // --- Movement (Uses current angle and calculated speed) ---
+            const angleRad = helicopterState.angle * (Math.PI / 180);
+            const vx = Math.cos(angleRad) * helicopterState.speed;
+            const vy = Math.sin(angleRad) * helicopterState.speed;
+            helicopterState.x += vx * dt;
+            helicopterState.y += vy * dt;
+
+            // --- Boundary Collision & POI Detection (Unchanged) ---
+            helicopterState.x = Math.max(0, Math.min(MAP_WIDTH, helicopterState.x));
+            helicopterState.y = Math.max(0, Math.min(MAP_HEIGHT, helicopterState.y));
+            let foundNearbyPOI = null;
+            for (const poi of pointsOfInterest) { const dx = helicopterState.x - poi.x; const dy = helicopterState.y - poi.y; if (Math.sqrt(dx * dx + dy * dy) < landingRadius) { foundNearbyPOI = poi; break; } }
+            if (foundNearbyPOI) { if (gameState === 'FLYING') console.log(`DEBUG: Near POI ${foundNearbyPOI.id}`); gameState = 'NEAR_POI'; currentNearbyPOI = foundNearbyPOI; poiNameSpan.textContent = foundNearbyPOI.name; landIndicator.style.display = 'block'; landPrompt.style.display = 'inline'; landButton.style.display = 'flex'; joystickContainer.style.display = 'flex';} else { if (gameState === 'NEAR_POI') { console.log("DEBUG: Moved away from POI"); landIndicator.style.display = 'none'; landPrompt.style.display = 'none'; landButton.style.display = 'none'; currentNearbyPOI = null; } gameState = 'FLYING'; }
+        }
+
+        // --- Render Logic (MODIFIED to re-enable rotation) ---
         function render() {
-            // Set the element's top-left corner to the nose position (x, y)
             helicopterElement.style.left = `${helicopterState.x}px`;
             helicopterElement.style.top = `${helicopterState.y}px`;
 
-            // --- MODIFIED ---
-            // Remove the rotation part of the transform.
-            // Only apply the translation based on the CSS transform-origin (center top)
-            // and the element's position set by style.left/top.
-            helicopterElement.style.transform = `translate(-50%, 0%)`;
-            // --- END MODIFIED ---
+            // Re-add rotation based on the helicopter's logical angle
+            const visualAngle = helicopterState.angle + 90; // +90 because emoji faces up
+            helicopterElement.style.transform = `translate(-50%, 0%) rotate(${visualAngle}deg)`;
 
-            // Update UI text (Unchanged)
+            // Update UI text
             speedInfo.textContent = helicopterState.speed.toFixed(2);
             let displayAngle = Math.round((helicopterState.angle + 90 + 360) % 360);
-            angleInfo.textContent = `${displayAngle}°`; // Still show the logical angle
+            angleInfo.textContent = `${displayAngle}°`;
         }
 
         // --- Map Scrolling Function (Unchanged) ---
         function centerViewOnHelicopter() { const scrollX = helicopterState.x - mapContainer.clientWidth / 2; const scrollY = helicopterState.y - mapContainer.clientHeight / 2; mapContainer.scrollTo({ left: scrollX, top: scrollY, behavior: 'auto' }); }
 
-        // --- Landing and Info Panel Functions (Unchanged) ---
-        function landAndShowInfo(poi) { console.log(`DEBUG: Landing at POI ${poi.id}`); gameState = 'SHOWING_INFO'; currentNearbyPOI = poi; helicopterState.speed = 0; Object.keys(controls).forEach(key => controls[key] = false); landIndicator.style.display = 'none'; landPrompt.style.display = 'none'; landButton.style.display = 'none'; touchControlsContainer.style.display = 'none'; infoTitle.textContent = `${poi.id}. ${poi.name}`; infoDescription.innerHTML = poi.description.replace(/\n/g, '<br>'); mapContainer.style.opacity = '0'; infoPanel.classList.add('visible'); }
-        function hideInfoAndResumeFlight() { if (!currentNearbyPOI) return; console.log(`DEBUG: Resuming flight from POI ${currentNearbyPOI.id}`); infoPanel.classList.remove('visible'); mapContainer.style.opacity = '1'; touchControlsContainer.style.display = 'flex'; helicopterState.x = currentNearbyPOI.x; helicopterState.y = currentNearbyPOI.y; helicopterState.speed = 0; centerViewOnHelicopter(); gameState = 'FLYING'; }
+        // --- Landing and Info Panel Functions (Hide joystick too) ---
+        function landAndShowInfo(poi) {
+            console.log(`DEBUG: Landing at POI ${poi.id}`); gameState = 'SHOWING_INFO';
+            currentNearbyPOI = poi; helicopterState.speed = 0;
+            // Reset joystick state
+            joystickState.active = false; joystickState.magnitude = 0;
+            joystickHandle.style.transform = `translate(-50%, -50%)`;
+            joystickHandle.style.left = `50%`; joystickHandle.style.top = `50%`;
+            joystickActiveTouchId = null;
 
-        // --- Start Game (Unchanged) ---
+            landIndicator.style.display = 'none'; landPrompt.style.display = 'none';
+            landButton.style.display = 'none';
+            joystickContainer.style.display = 'none'; // Hide joystick
+            infoTitle.textContent = `${poi.id}. ${poi.name}`;
+            infoDescription.innerHTML = poi.description.replace(/\n/g, '<br>');
+            mapContainer.style.opacity = '0'; infoPanel.classList.add('visible');
+        }
+        function hideInfoAndResumeFlight() {
+            if (!currentNearbyPOI) return; console.log(`DEBUG: Resuming flight from POI ${currentNearbyPOI.id}`);
+            infoPanel.classList.remove('visible'); mapContainer.style.opacity = '1';
+            joystickContainer.style.display = 'block'; // Show joystick
+            helicopterState.x = currentNearbyPOI.x; helicopterState.y = currentNearbyPOI.y;
+            helicopterState.speed = 0; centerViewOnHelicopter();
+            gameState = 'FLYING';
+        }
+
+        // --- Start Game ---
         console.log("DEBUG: Starting game loop...");
         requestAnimationFrame(gameLoop);
     </script>
