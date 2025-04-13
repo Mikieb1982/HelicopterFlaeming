@@ -33,11 +33,14 @@
         #map-image.loading { opacity: 0; }
         #map-image.error { opacity: 0.2; }
 
-        /* Helicopter */
+        /* Helicopter - SET TO 60px */
         #helicopter {
             position: absolute;
-            width: 120px; height: 120px; /* Previous size */
-            font-size: 120px; line-height: 120px;
+            /* Set dimensions to 60px as requested */
+            width: 60px;
+            height: 60px;
+            font-size: 60px; /* Controls size of emoji */
+            line-height: 60px; /* Helps vertically center emoji */
             text-align: center;
             transform: translate(-50%, -50%) rotate(0deg);
             transform-origin: center center; transition: transform 0.05s linear;
@@ -109,7 +112,7 @@
         #return-button:hover { background: linear-gradient(to bottom, #80888f, #5a6268); }
         #return-button:active { box-shadow: inset 0 1px 3px rgba(0,0,0,0.3); }
 
-        /* --- Simplified Touch Controls Styling --- */
+        /* Simplified Touch Controls Styling */
         #touch-controls {
             position: fixed; bottom: 15px; left: 0; width: 100%;
             display: flex; justify-content: space-between; align-items: flex-end;
@@ -143,8 +146,7 @@
         #touch-controls button:active svg { fill: #fff; }
 
         .touch-group-left { display: flex; gap: 25px; }
-        /* Right group now only has one button */
-        .touch-group-right { display: flex; justify-content: center; } /* Center the single button */
+        .touch-group-right { display: flex; justify-content: center; }
 
         /* Land Button */
         #land-button {
@@ -202,7 +204,7 @@
         <div class="touch-group-right"> <button id="touch-forward" aria-label="Thrust Forward">
                  <svg viewBox="0 0 24 24"><path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6 1.41 1.41z"/></svg>
             </button>
-            </div>
+        </div>
     </div>
     <button id="land-button" aria-label="Land">Land</button>
 
@@ -226,9 +228,7 @@
         const touchControlsContainer = document.getElementById('touch-controls');
         const touchLeft = document.getElementById('touch-left');
         const touchRight = document.getElementById('touch-right');
-        // Renamed touch-up to touch-forward
         const touchForward = document.getElementById('touch-forward');
-        // Removed touch-down reference
         const landButton = document.getElementById('land-button');
 
         console.log("Script starting...");
@@ -238,10 +238,9 @@
         console.log(`Configured map dimensions: ${MAP_WIDTH}x${MAP_HEIGHT}`);
         const startX = 1364; const startY = 603;
         const turnRate = 3.0;
-        // Simplified: Single power value for forward thrust
-        const forwardThrustPower = 0.15; // Renamed from thrustPower/pitchPower
+        const forwardThrustPower = 0.15;
         const maxSpeed = 5.0;
-        const drag = 0.98; // Slows down when not thrusting
+        const drag = 0.98;
         const minSpeed = 0.05;
         const landingRadius = 60;
 
@@ -251,12 +250,7 @@
 
         // --- Game State ---
         let helicopterState = { x: startX, y: startY, angle: -90, speed: 0 };
-        // Simplified controls object
-        let controls = {
-            turnLeft: false,
-            turnRight: false,
-            moveForward: false // Replaces pitchUp/pitchDown/applyThrust for basic movement
-        };
+        let controls = { turnLeft: false, turnRight: false, moveForward: false };
         let lastTimestamp = 0; let gameReady = false; let currentNearbyPOI = null; let gameState = 'FLYING';
 
         // --- Image Loading Check (Unchanged) ---
@@ -264,45 +258,19 @@
         mapImage.onerror = () => { console.error("DEBUG: mapImage.onerror fired!"); debugInfo.textContent = "Error loading map image!"; debugInfo.style.display = 'block'; mapImage.classList.remove('loading'); mapImage.classList.add('error'); gameReady = false; console.log("DEBUG: gameReady is false due to image error."); };
         if (mapImage.complete && mapImage.naturalWidth > 0) { mapImage.onload(); } else if (mapImage.complete) { mapImage.onerror(); } else { console.log("DEBUG: Image not yet complete."); }
 
-        // --- Keyboard Control Listeners (Adapted for simpler mechanics) ---
-        document.addEventListener('keydown', (event) => {
-            if (gameState === 'SHOWING_INFO') return;
-            if ((event.key === 'l' || event.key === 'L') && gameState === 'NEAR_POI' && currentNearbyPOI) {
-                event.preventDefault(); landAndShowInfo(currentNearbyPOI); return;
-            }
-            switch (event.key) {
-                case 'ArrowLeft': controls.turnLeft = true; break;
-                case 'ArrowRight': controls.turnRight = true; break;
-                case 'ArrowUp': controls.moveForward = true; break; // ArrowUp now directly controls forward movement
-                // ArrowDown and Control no longer directly map to primary movement
-                // case 'ArrowDown': controls.pitchUp = true; break; // Removed
-                // case 'Control': controls.applyThrust = true; break; // Removed
-            }
-        });
-        document.addEventListener('keyup', (event) => {
-            if (gameState === 'SHOWING_INFO') return;
-            switch (event.key) {
-                case 'ArrowLeft': controls.turnLeft = false; break;
-                case 'ArrowRight': controls.turnRight = false; break;
-                case 'ArrowUp': controls.moveForward = false; break;
-                // case 'ArrowDown': controls.pitchUp = false; break; // Removed
-                // case 'Control': controls.applyThrust = false; break; // Removed
-            }
-        });
+        // --- Keyboard Control Listeners (Unchanged) ---
+        document.addEventListener('keydown', (event) => { if (gameState === 'SHOWING_INFO') return; if ((event.key === 'l' || event.key === 'L') && gameState === 'NEAR_POI' && currentNearbyPOI) { event.preventDefault(); landAndShowInfo(currentNearbyPOI); return; } switch (event.key) { case 'ArrowLeft': controls.turnLeft = true; break; case 'ArrowRight': controls.turnRight = true; break; case 'ArrowUp': controls.moveForward = true; break; } });
+        document.addEventListener('keyup', (event) => { if (gameState === 'SHOWING_INFO') return; switch (event.key) { case 'ArrowLeft': controls.turnLeft = false; break; case 'ArrowRight': controls.turnRight = false; break; case 'ArrowUp': controls.moveForward = false; break; } });
 
-        // --- Touch Control Listeners (Adapted for simpler mechanics) ---
+        // --- Touch Control Listeners (Unchanged) ---
         function handleTouchStart(event, controlFlag) { event.preventDefault(); if (gameState !== 'SHOWING_INFO') controls[controlFlag] = true; }
         function handleTouchEnd(event, controlFlag) { if (gameState !== 'SHOWING_INFO') controls[controlFlag] = false; }
-
         touchLeft.addEventListener('touchstart', (e) => handleTouchStart(e, 'turnLeft'), { passive: false });
         touchLeft.addEventListener('touchend', (e) => handleTouchEnd(e, 'turnLeft'));
         touchRight.addEventListener('touchstart', (e) => handleTouchStart(e, 'turnRight'), { passive: false });
         touchRight.addEventListener('touchend', (e) => handleTouchEnd(e, 'turnRight'));
-        // Forward button listener
         touchForward.addEventListener('touchstart', (e) => handleTouchStart(e, 'moveForward'), { passive: false });
         touchForward.addEventListener('touchend', (e) => handleTouchEnd(e, 'moveForward'));
-        // Removed listeners for touch-down
-
         landButton.addEventListener('touchstart', (event) => { event.preventDefault(); if (gameState === 'NEAR_POI' && currentNearbyPOI) landAndShowInfo(currentNearbyPOI); }, { passive: false });
 
         // --- UI Button Listeners (Unchanged) ---
@@ -311,67 +279,8 @@
         // --- Game Loop (Unchanged) ---
         function gameLoop(timestamp) { if (!lastTimestamp) lastTimestamp = timestamp; const deltaTime = (timestamp - lastTimestamp) / (1000 / 60); lastTimestamp = timestamp; if (gameReady && gameState !== 'SHOWING_INFO' && deltaTime > 0 && deltaTime < 10) { update(deltaTime); render(); centerViewOnHelicopter(); } requestAnimationFrame(gameLoop); }
 
-        // --- Update Logic (MODIFIED for simpler mechanics) ---
-        function update(dt) {
-            // --- Rotation ---
-            if (controls.turnLeft) helicopterState.angle -= turnRate * dt;
-            if (controls.turnRight) helicopterState.angle += turnRate * dt;
-            helicopterState.angle = (helicopterState.angle + 360) % 360;
-
-            // --- Speed / Acceleration (Simplified) ---
-            let acceleration = 0;
-            // Apply forward thrust if the button is pressed
-            if (controls.moveForward) {
-                acceleration += forwardThrustPower;
-            }
-            // Apply acceleration to speed
-            helicopterState.speed += acceleration * dt;
-            // Apply drag regardless of acceleration
-            helicopterState.speed *= Math.pow(drag, dt);
-
-            // Stop if speed is very low and not accelerating
-            if (helicopterState.speed < minSpeed && !controls.moveForward) {
-                helicopterState.speed = 0;
-            }
-            // Clamp speed between 0 and maxSpeed
-            helicopterState.speed = Math.max(0, Math.min(helicopterState.speed, maxSpeed));
-
-            // --- Movement ---
-            // Calculate velocity components based on speed and CURRENT angle
-            const angleRad = helicopterState.angle * (Math.PI / 180);
-            const vx = Math.cos(angleRad) * helicopterState.speed;
-            const vy = Math.sin(angleRad) * helicopterState.speed;
-            // Update position based on velocity and delta time
-            helicopterState.x += vx * dt;
-            helicopterState.y += vy * dt;
-
-            // --- Boundary Collision (Unchanged) ---
-            helicopterState.x = Math.max(0, Math.min(MAP_WIDTH, helicopterState.x));
-            helicopterState.y = Math.max(0, Math.min(MAP_HEIGHT, helicopterState.y));
-
-            // --- POI Detection (Unchanged) ---
-            let foundNearbyPOI = null;
-            for (const poi of pointsOfInterest) {
-                const dx = helicopterState.x - poi.x; const dy = helicopterState.y - poi.y;
-                if (Math.sqrt(dx * dx + dy * dy) < landingRadius) { foundNearbyPOI = poi; break; }
-            }
-
-            // --- Update Game State based on POI proximity (Unchanged) ---
-            if (foundNearbyPOI) {
-                if (gameState === 'FLYING') console.log(`DEBUG: Near POI ${foundNearbyPOI.id}`);
-                gameState = 'NEAR_POI'; currentNearbyPOI = foundNearbyPOI;
-                poiNameSpan.textContent = foundNearbyPOI.name;
-                landIndicator.style.display = 'block'; landPrompt.style.display = 'inline';
-                landButton.style.display = 'flex';
-            } else {
-                if (gameState === 'NEAR_POI') {
-                     console.log("DEBUG: Moved away from POI");
-                     landIndicator.style.display = 'none'; landPrompt.style.display = 'none';
-                     landButton.style.display = 'none'; currentNearbyPOI = null;
-                }
-                gameState = 'FLYING';
-            }
-        }
+        // --- Update Logic (Unchanged) ---
+        function update(dt) { if (controls.turnLeft) helicopterState.angle -= turnRate * dt; if (controls.turnRight) helicopterState.angle += turnRate * dt; helicopterState.angle = (helicopterState.angle + 360) % 360; let acceleration = 0; if (controls.moveForward) { acceleration += forwardThrustPower; } helicopterState.speed += acceleration * dt; helicopterState.speed *= Math.pow(drag, dt); if (helicopterState.speed < minSpeed && !controls.moveForward) { helicopterState.speed = 0; } helicopterState.speed = Math.max(0, Math.min(helicopterState.speed, maxSpeed)); const angleRad = helicopterState.angle * (Math.PI / 180); const vx = Math.cos(angleRad) * helicopterState.speed; const vy = Math.sin(angleRad) * helicopterState.speed; helicopterState.x += vx * dt; helicopterState.y += vy * dt; helicopterState.x = Math.max(0, Math.min(MAP_WIDTH, helicopterState.x)); helicopterState.y = Math.max(0, Math.min(MAP_HEIGHT, helicopterState.y)); let foundNearbyPOI = null; for (const poi of pointsOfInterest) { const dx = helicopterState.x - poi.x; const dy = helicopterState.y - poi.y; if (Math.sqrt(dx * dx + dy * dy) < landingRadius) { foundNearbyPOI = poi; break; } } if (foundNearbyPOI) { if (gameState === 'FLYING') console.log(`DEBUG: Near POI ${foundNearbyPOI.id}`); gameState = 'NEAR_POI'; currentNearbyPOI = foundNearbyPOI; poiNameSpan.textContent = foundNearbyPOI.name; landIndicator.style.display = 'block'; landPrompt.style.display = 'inline'; landButton.style.display = 'flex'; } else { if (gameState === 'NEAR_POI') { console.log("DEBUG: Moved away from POI"); landIndicator.style.display = 'none'; landPrompt.style.display = 'none'; landButton.style.display = 'none'; currentNearbyPOI = null; } gameState = 'FLYING'; } }
 
         // --- Render Logic (Unchanged) ---
         function render() { helicopterElement.style.left = `${helicopterState.x}px`; helicopterElement.style.top = `${helicopterState.y}px`; const visualAngle = helicopterState.angle + 90; helicopterElement.style.transform = `translate(-50%, -50%) rotate(${visualAngle}deg)`; speedInfo.textContent = helicopterState.speed.toFixed(2); let displayAngle = Math.round((helicopterState.angle + 90 + 360) % 360); angleInfo.textContent = `${displayAngle}°`; }
