@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Hoher Fläming POI Explorer (Joystick)</title>
+    <title>Hoher Fläming POI Explorer (Orientation Layout)</title>
     <style>
         /* Basic page styling */
         html, body {
@@ -11,7 +11,7 @@
             height: 100%; width: 100%;
             background-color: #2c2c2c;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
-            position: relative; /* Needed for fixed/absolute positioning */
+            position: relative;
         }
 
         /* Map Container */
@@ -39,9 +39,9 @@
             width: 60px; height: 60px;
             font-size: 60px; line-height: 60px;
             text-align: center;
-            transform-origin: center top; /* Origin at nose */
-            transform: translate(-50%, 0%) rotate(0deg); /* Initial transform */
-            transition: transform 0.05s linear; /* Smooth rotation */
+            transform-origin: center top;
+            transform: translate(-50%, 0%) rotate(0deg);
+            transition: transform 0.05s linear;
             z-index: 10; pointer-events: none;
         }
 
@@ -58,7 +58,7 @@
 
         /* Debug Info */
         #debug-info {
-            position: fixed; bottom: 150px; /* Position above joystick */
+            position: fixed; bottom: 150px; /* Adjusted default position */
             left: 8px; background-color: rgba(200, 0, 0, 0.8); color: #fff;
             padding: 5px 8px; border-radius: 3px; font-size: 10px;
             z-index: 30; display: none; pointer-events: none;
@@ -66,8 +66,7 @@
 
         /* Land Indicator */
         #land-indicator {
-            position: fixed; bottom: 90px; /* Position above land button's new spot */
-            /* Center horizontally */
+            position: fixed; bottom: 90px;
             left: 50%; transform: translateX(-50%);
             background-color: rgba(255, 193, 7, 0.9); color: #000;
             padding: 6px 12px; border-radius: 4px; font-size: 14px;
@@ -112,52 +111,39 @@
         /* --- Joystick Styling --- */
         #joystick-container {
             position: fixed;
+            /* --- Default (Portrait): Bottom Left --- */
             bottom: 20px;
-            /* --- MODIFIED: Moved to right --- */
-            right: 20px;
-            /* left: 20px; */ /* Removed left positioning */
-            width: 120px; /* Size of the joystick area */
-            height: 120px;
+            left: 20px;
+            right: auto; /* Ensure right is not set */
+            width: 120px; height: 120px;
             z-index: 35;
             pointer-events: none;
         }
         #joystick-base {
-            position: absolute;
-            width: 100%; height: 100%;
-            border-radius: 50%;
-            background: rgba(80, 80, 80, 0.5);
-            border: 2px solid rgba(200, 200, 200, 0.6);
-            box-shadow: inset 0 0 15px rgba(0,0,0,0.3);
-            pointer-events: auto;
+            position: absolute; width: 100%; height: 100%; border-radius: 50%;
+            background: rgba(80, 80, 80, 0.5); border: 2px solid rgba(200, 200, 200, 0.6);
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.3); pointer-events: auto;
         }
         #joystick-handle {
-            position: absolute;
-            width: 60px; height: 60px;
-            border-radius: 50%;
-            background: linear-gradient(to bottom, #5a5a5a, #333);
-            border: 1px solid #777;
+            position: absolute; width: 60px; height: 60px; border-radius: 50%;
+            background: linear-gradient(to bottom, #5a5a5a, #333); border: 1px solid #777;
             box-shadow: 0 3px 5px rgba(0,0,0,0.4), inset 0 1px 1px rgba(255,255,255,0.1);
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            pointer-events: auto;
-            cursor: grab;
-            touch-action: none;
+            top: 50%; left: 50%; transform: translate(-50%, -50%);
+            pointer-events: auto; cursor: grab; touch-action: none;
         }
          #joystick-handle:active {
-             cursor: grabbing;
-             background: linear-gradient(to top, #5a5a5a, #333);
+             cursor: grabbing; background: linear-gradient(to top, #5a5a5a, #333);
              box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
          }
 
-        /* Land Button - Positioned above joystick */
+        /* Land Button Styling */
         #land-button {
             position: fixed;
-             /* --- MODIFIED: Positioned above joystick --- */
-            bottom: 150px; /* Joystick bottom (20) + joystick height (120) + gap (10) */
-            right: 20px; /* Align with joystick */
-            /* left: 50%; transform: translateX(-50%); */ /* Removed centering */
-            transform: none; /* Remove previous transform */
-            /* --- END MODIFIED --- */
+             /* --- Default (Portrait): Bottom Right --- */
+            bottom: 20px;
+            right: 20px;
+            left: auto; /* Ensure left is not set */
+            transform: none; /* Remove any previous transform */
             width: 70px; height: 50px; border-radius: 6px;
             font-size: 16px; font-weight: bold; text-transform: uppercase;
             background: linear-gradient(to bottom, #ffcc00, #cca300); color: #212529;
@@ -171,9 +157,30 @@
          #land-button:active {
              background: linear-gradient(to top, #ffcc00, #cca300);
              box-shadow: 0 0 0 3px #333, 0 0 0 5px #555, inset 0 3px 5px rgba(0, 0, 0, 0.3);
-             transform: scale(0.95); /* Keep scale transform */
+             transform: scale(0.95);
              color: #000;
          }
+
+        /* --- Landscape Orientation Styles --- */
+        @media (orientation: landscape) {
+            #joystick-container {
+                /* Landscape: Bottom Right */
+                left: auto; /* Override default */
+                right: 20px;
+            }
+            #land-button {
+                /* Landscape: Above Joystick (Bottom Right) */
+                bottom: 150px; /* Joystick bottom (20) + height (120) + gap (10) */
+                right: 20px;
+                left: auto; /* Override default */
+                transform: none; /* Ensure no conflicting transform */
+            }
+             #debug-info {
+                /* Adjust debug info position in landscape if needed */
+                 bottom: 20px;
+                 left: 150px; /* Place it away from joystick */
+             }
+        }
 
     </style>
 </head>
@@ -242,7 +249,7 @@
         const drag = 0.98;
         const minSpeed = 0.05;
         const landingRadius = 60;
-        let joystickMaxRadius = 0; // Initialized later after element dimensions are known
+        let joystickMaxRadius = 0;
 
         // --- POI Data (Unchanged) ---
         const pointsOfInterest = [ { id: 1, name: "Stadt und Burg Ziesar", x: 470, y: 150, description: "Auf der Burg Ziesar befindet sich das Museum für brandenburgische Kirchen- und Kulturgeschichte des Mittelalters und die Touristinformation. Sehenswert sind hier auch die Schlosskapelle und der der weite Blick vom Storchenturm über den Ziesorer Vorfläming. Aber auch ein Spaziergang durch den historischen Stadtkern lohnt sich.\nTouristinformation Ziesar\n14793 Ziesar, Mühlentor 15A\nTel.: 033830 12735\nwww.burg-ziesar.de" }, { id: 2, name: "Gutspark Dahlen", x: 708, y: 357, description: "Der Gutspark erschließt sich auf einem kurzen Rundweg, wobei die Spazierende um den Schwanenteich besonders reizvoll ist. Zudem kann der Bauerngarten mit Kräutern und Duftpflanzen besucht werden. Gleich gegenüber dem Gutspark steht, etwas versteckt, eine sehenswerte Fachwerkkirche.\nWer gern Rad fährt, dem sei die Ton & Töpfe-Radtour empfohlen, die durch Dahlen führt." }, { id: 3, name: "Klein Briesener Bach mit Artesischem Brunnen", x: 998, y: 181, description: "Der Artesische Brunnen ist im idyllischen Örtchen Klein Briesen zu finden. Das Wasser steigt hier nur durch seinen Eigendruck empor und wird dem Klein Briesener Bach zugeführt. Wandernde können dem sich schlängelnden Bach auf dem Burgenwanderweg bis Ragösen folgen.\nEin Abstecher zur Fachwerkkirche in Klein Briesen lohnt genauso wie die Wanderung bis zum Aussichtsturm 'Schöne Aussicht'." }, { id: 4, name: "Paradies Dippmannsdorf", x: 1322, y: 265, description: "Hier sprudelt aus einigen Dutzend Quellen glasklares Wasser, das die Mühlenteiche speist. Der von alten Buchen, Eichen und Erlen bestandene Quelltopf wurde vorsichtig erschlossen. Ein Spaziergang lohnt sich zu jeder Jahreszeit und lässt sich gut mit einer Wanderung auf dem Kindererlebnispfad verbinden, der hier auf dem Burgenwanderweg verläuft.\nGleich nebenan verwöhnt die Gaststätte 'Paradies' seine Gäste." }, { id: 5, name: "Töpferort Görzke", x: 416, y: 439, description: "Ein Besuch der kleinen Museen und des Hofladens auf dem Handwerkerhof, ein kleiner Bummel entlang der Bauerngärten hinüber zum slawischen Burgwall und die Einkaufsmöglichkeiten in fünf Töpfereien lohnen den Besuch des Flämingortes.\nAuf dem Töpferwanderweg werden Wandernde mit weitläufigen Ausblicken auf das Tal der Buckau und die umliegende Fläminglandschaft belohnt." }, { id: 6, name: "Hagelberg", x: 946, y: 719, description: "Der Hagelberg, ein echter 'Zweihunderter', lädt zum Eintrag ins Gipfelbuch ein – nicht ohne Grund wird die Landschaft im Hohen Fläming auch mit einem Augenzwinkern das 'kleinste Mittelgebirge Deutschlands' genannt. Für den 'Aufstieg' zum Gipfelkreuz wird man mit einem schönen Blick über die Fläminglandschaft belohnt.\nUnweit davon öffnet am Wochenende auf dem historischen Gutshof in Klein Glien ein Café für Ausflüglerinnen und Ausflügler." }, { id: 7, name: "Bad Belzig mit Burg Eisenhardt", x: 1364, y: 603, description: "Auf der Burg Eisenhardt lässt sich die 1000-jährige Geschichte der Stadt hautnah erkunden. Vom Butterturm bietet sich wohl der schönste Ausblick auf Stadt und Umgebung. Unterhalb der Burg befinden sich die Burgwiesen, auf denen der barrierefreie Naturerlebnispfad die Lust zum Mitmachen weckt. In der SteinTherme sorgt jodhaltiges Thermalwasser für gesunde Entspannung.\nTourristinformation\n14806 Bad Belzig, Marktplatz 1\nTel.: 033841 94900\nwww.bad-belzig.de" }, { id: 8, name: "Aussichtspunkt Belziger Landschaftswiesen", x: 1616, y: 501, description: "Am Europaradweg R1 gelegen, bietet sich ein beeindruckender Blick in das Niederungsgebiet der Belziger Landschaftswiesen. Dort befindet sich eines der wichtigsten Vogelschutzgebiete Brandenburgs.\nWenn im Winterhalbjahr Großtrappengruppen pflanzliche Nahrung suchen, bieten sich vom Rastplatz aus sehr gute Beobachtungsmöglichkeiten." }, { id: 9, name: "Wiesenburg mit Schloss und Park", x: 836, y: 843, description: "Das Schloss erhielt seine heutige Gestalt Ende des 19. Jahrhunderts. Vom Schlossturm hat man eine eindrucksvolle Aussicht auf Wiesenburg und seine Umgebung. Der größtenteils als Landschaftspark gestaltete Schlosspark ist die bedeutendste Parkanlage zwischen Sanssouci und Wörlitz. Bis zum Bahnhof erstreckt sich diese Anlage, durch die auch der Kunstwanderweg führt.\nTouristerei Wiesenburg\n14827 Wiesenburg/Mark, Schlossstr. 1\nTel.: 033849 79898\nwww.wiesenburgmark.de" }, { id: 10, name: "Naturparkzentrum Hoher Fläming", x: 1170, y: 1231, description: "Das Besucherinformationszentrum ist die zentrale Anlaufstelle für alle Gäste. Hier erhält man die besten Tipps für Exkursionen in den Hohen Fläming und kann Fahrräder ausleihen. Neben dem Fläming-Laden mit regionalen Produkten gibt es eine spannende Naturpark-Erlebnisausstellung und einen 'Garten der Sinne'. Direkt vor dem Naturparkzentrum hält der Bus der Burgenlinie.\nNaturparkzentrum Hoher Fläming\n14823 Raben, Brennereiweg 45\nTel.: 033848 60004\nwww.flaeming.net" }, { id: 11, name: "Raben mit Burg Rabenstein", x: 1124, y: 1329, description: "Auf dem 'Steilen Hagen' liegt die südlichste der Flämingburgen, die Höhenburg Rabenstein. Von der Burg führt ein Erlebnispfad durch das Naturschutzgebiet Rabenstein hinunter ins Dorf und bis zum Naturparkzentrum.\nDie tagsüber offene Feldsteinkirche kann auch besucht werden.\nDer Gasthof Hemmerling bewirtet täglich außer montags seine Gäste." }, { id: 12, name: "Niemegk", x: 1624, y: 1135, description: "Die Kirche St. Johannis und das alte Rathaus prägen das Stadtzentrum. Vom Kirchturm bietet sich ein schöner Ausblick auf die Hügelketten des Fläming. Ein imposanter Wasserturm, der heute ein Brausemuseum, einen Regionalladen und eine Likörmanufaktur beherbergt, liegen am südlichen Ortsausgang auf dem Rundwanderweg 44.\nEin Ausflug mit dem Rad lohnt sich von Niemegk aus auf der Feldsteinkirchenradtour, die zu sieben flämingtypischen Feldsteinkirchen führt." }, { id: 13, name: "Flämingbuchen", x: 654, y: 1171, description: "In dem großen Waldgebiet der Brandsheide sind einige Inseln aus Buchen zu finden, wie in den Naturschutzgebieten 'Flämingbuchen' und 'Spring'. Auf den Rundwanderwegen 70 oder 71 lassen sich diese landschaftlichen Höhepunkte des Naturparks erleben. Startpunkte sind die Bahnhöfe Wiesenburg/Mark oder Medewitz, die am RE 7 liegen. Auf dem Findlingswanderweg warten größere und kleinere Findlinge darauf entdeckt zu werden." }, { id: 14, name: "Brautrummel mit Riesenstein", x: 1110, y: 1023, description: "Wie eine Sage berichtet, ertrank ein junges Brautpaar nach einem Gewitterregen in der Rummel, einem Trockental.\nHeute kann man auf einer Rundwanderung zum Riesenstein die besondere Natur in der Rummel erleben, Familienfotos auf dem Riesenstein schießen, ein Picknick im Grünen genießen und anschließend ein Nickerchen auf dem großen Feldbett machen." }, { id: 15, name: "Neuendorfer Rummel", x: 1482, y: 1309, description: "Die Rummeln, verzweigte, enge Trockentälchen, entstanden nach der Eiszeit und wurden durch Wassererosion stetig weiter vertieft. Wie grüne, bewaldete Finger strecken sie sich weit in die Agrarlandschaft hinein.\nÜber den Burgenwanderweg oder den Rundwanderweg 40 kann man die üppig bewachsene und steilwandige Neuendorfer Rummel durchwandern." }, { id: 16, name: "Garrey mit Aussichtsplattform", x: 1494, y: 1427, description: "Die Landschaft rings um Garrey bietet fantastische Ausblicke auch über Teile des sachsen-anhaltinischen Naturparks. Deshalb 'krönt' eine Aussichtsplattform das alte Wasserwerk, das aufwändig restauriert wurde und in dem sich eine kleine Ausstellung befindet.\nDer Ausflug lässt sich sehr gut mit einer Wanderung in die Neuendorfer Rummel und einer Einkehr ins Café Lehmann in Garrey verbinden." } ];
@@ -258,8 +265,7 @@
             console.log("DEBUG: mapImage.onload fired!"); debugInfo.style.display = 'none';
             mapImage.classList.remove('loading', 'error'); gameReady = true;
             console.log("DEBUG: gameReady set to true.");
-            // Calculate joystick radius AFTER elements are loaded and sized
-            calculateJoystickRadius();
+            calculateJoystickRadius(); // Calculate dimensions now
             centerViewOnHelicopter();
             if (mapImage.naturalWidth !== MAP_WIDTH || mapImage.naturalHeight !== MAP_HEIGHT) {
                 console.warn(`Map image size mismatch!`); debugInfo.textContent = `Warning: Map size mismatch!`;
@@ -271,14 +277,12 @@
 
         // --- Keyboard Control Listeners (Simplified for testing) ---
         document.addEventListener('keydown', (event) => { if (gameState === 'SHOWING_INFO') return; if ((event.key === 'l' || event.key === 'L') && gameState === 'NEAR_POI' && currentNearbyPOI) { event.preventDefault(); landAndShowInfo(currentNearbyPOI); return; } switch (event.key) { case 'ArrowLeft': joystickState.targetAngle = (joystickState.targetAngle - 5 + 360) % 360; joystickState.active = true; break; case 'ArrowRight': joystickState.targetAngle = (joystickState.targetAngle + 5) % 360; joystickState.active = true; break; case 'ArrowUp': joystickState.magnitude = Math.min(1, joystickState.magnitude + 0.1); joystickState.active = true; break; case 'ArrowDown': joystickState.magnitude = Math.max(0, joystickState.magnitude - 0.1); joystickState.active = true; break; } });
-        // document.addEventListener('keyup', (event) => { /* Basic keyup removed for simplicity */ });
 
         // --- Joystick Touch Listeners ---
         let joystickActiveTouchId = null;
-        let baseRect, baseCenterX, baseCenterY; // Calculated later
+        let baseRect, baseCenterX, baseCenterY;
 
         function calculateJoystickRadius() {
-             // Ensure elements are ready before getting dimensions
              if(joystickBase && joystickHandle) {
                 joystickMaxRadius = joystickBase.offsetWidth / 2 - joystickHandle.offsetWidth / 2;
                 baseRect = joystickBase.getBoundingClientRect();
@@ -287,51 +291,41 @@
                 console.log("DEBUG: Joystick radius calculated:", joystickMaxRadius);
              } else {
                  console.error("DEBUG: Joystick elements not found for radius calculation.");
-                 joystickMaxRadius = 50; // Fallback radius
+                 joystickMaxRadius = 50; // Fallback
              }
         }
 
         function handleJoystickTouch(event) {
-            if (gameState === 'SHOWING_INFO' || !joystickMaxRadius) return; // Don't process if radius not set
+            if (gameState === 'SHOWING_INFO' || !joystickMaxRadius) return;
             event.preventDefault();
-
             for (let i = 0; i < event.changedTouches.length; i++) {
                 let touch = event.changedTouches[i];
                 if (event.type === 'touchstart') {
                     if (joystickActiveTouchId === null && (touch.target === joystickHandle || touch.target === joystickBase)) {
-                        joystickActiveTouchId = touch.identifier;
-                        joystickState.active = true;
+                        joystickActiveTouchId = touch.identifier; joystickState.active = true;
                         updateJoystick(touch.clientX, touch.clientY);
                     }
                 } else if (event.type === 'touchmove') {
-                    if (touch.identifier === joystickActiveTouchId) {
-                        updateJoystick(touch.clientX, touch.clientY);
-                    }
+                    if (touch.identifier === joystickActiveTouchId) updateJoystick(touch.clientX, touch.clientY);
                 } else if (event.type === 'touchend' || event.type === 'touchcancel') {
                     if (touch.identifier === joystickActiveTouchId) {
-                        joystickActiveTouchId = null;
-                        joystickState.active = false;
-                        joystickState.magnitude = 0;
+                        joystickActiveTouchId = null; joystickState.active = false; joystickState.magnitude = 0;
                         joystickHandle.style.transform = `translate(-50%, -50%)`;
-                        joystickHandle.style.left = `50%`;
-                        joystickHandle.style.top = `50%`;
+                        joystickHandle.style.left = `50%`; joystickHandle.style.top = `50%`;
                     }
                 }
             }
         }
 
         function updateJoystick(touchX, touchY) {
-            let deltaX = touchX - baseCenterX;
-            let deltaY = touchY - baseCenterY;
+            let deltaX = touchX - baseCenterX; let deltaY = touchY - baseCenterY;
             let angleRad = Math.atan2(deltaY, deltaX);
             joystickState.targetAngle = angleRad * (180 / Math.PI);
             let distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
             let clampedDistance = Math.min(distance, joystickMaxRadius);
-            joystickState.magnitude = joystickMaxRadius > 0 ? (clampedDistance / joystickMaxRadius) : 0; // Avoid divide by zero
-            let handleX = (Math.cos(angleRad) * clampedDistance);
-            let handleY = (Math.sin(angleRad) * clampedDistance);
-            joystickHandle.style.left = `calc(50% + ${handleX}px)`;
-            joystickHandle.style.top = `calc(50% + ${handleY}px)`;
+            joystickState.magnitude = joystickMaxRadius > 0 ? (clampedDistance / joystickMaxRadius) : 0;
+            let handleX = (Math.cos(angleRad) * clampedDistance); let handleY = (Math.sin(angleRad) * clampedDistance);
+            joystickHandle.style.left = `calc(50% + ${handleX}px)`; joystickHandle.style.top = `calc(50% + ${handleY}px)`;
             joystickHandle.style.transform = `translate(-50%, -50%)`;
         }
 
@@ -339,17 +333,16 @@
         document.addEventListener('touchmove', handleJoystickTouch, { passive: false });
         document.addEventListener('touchend', handleJoystickTouch, { passive: false });
         document.addEventListener('touchcancel', handleJoystickTouch, { passive: false });
-
-        window.addEventListener('resize', calculateJoystickRadius); // Recalculate on resize
+        window.addEventListener('resize', calculateJoystickRadius);
 
         // --- UI Button Listeners ---
         returnButton.addEventListener('click', hideInfoAndResumeFlight);
         landButton.addEventListener('touchstart', (event) => { event.preventDefault(); if (gameState === 'NEAR_POI' && currentNearbyPOI) landAndShowInfo(currentNearbyPOI); }, { passive: false });
 
-        // --- Game Loop (Unchanged) ---
+        // --- Game Loop ---
         function gameLoop(timestamp) { if (!lastTimestamp) lastTimestamp = timestamp; const deltaTime = (timestamp - lastTimestamp) / (1000 / 60); lastTimestamp = timestamp; if (gameReady && gameState !== 'SHOWING_INFO' && deltaTime > 0 && deltaTime < 10) { update(deltaTime); render(); centerViewOnHelicopter(); } requestAnimationFrame(gameLoop); }
 
-        // --- Update Logic (Joystick controls angle/thrust) ---
+        // --- Update Logic ---
         function update(dt) {
             if (joystickState.active) {
                 let currentAngle = helicopterState.angle; let targetAngle = joystickState.targetAngle;
@@ -375,7 +368,7 @@
             if (foundNearbyPOI) { if (gameState === 'FLYING') console.log(`DEBUG: Near POI ${foundNearbyPOI.id}`); gameState = 'NEAR_POI'; currentNearbyPOI = foundNearbyPOI; poiNameSpan.textContent = foundNearbyPOI.name; landIndicator.style.display = 'block'; landPrompt.style.display = 'inline'; landButton.style.display = 'flex'; joystickContainer.style.display = 'block';} else { if (gameState === 'NEAR_POI') { console.log("DEBUG: Moved away from POI"); landIndicator.style.display = 'none'; landPrompt.style.display = 'none'; landButton.style.display = 'none'; currentNearbyPOI = null; } gameState = 'FLYING'; }
         }
 
-        // --- Render Logic (Applies rotation) ---
+        // --- Render Logic ---
         function render() {
             helicopterElement.style.left = `${helicopterState.x}px`; helicopterElement.style.top = `${helicopterState.y}px`;
             const visualAngle = helicopterState.angle + 90;
@@ -385,10 +378,10 @@
             angleInfo.textContent = `${displayAngle}°`;
         }
 
-        // --- Map Scrolling Function (Unchanged) ---
+        // --- Map Scrolling Function ---
         function centerViewOnHelicopter() { const scrollX = helicopterState.x - mapContainer.clientWidth / 2; const scrollY = helicopterState.y - mapContainer.clientHeight / 2; mapContainer.scrollTo({ left: scrollX, top: scrollY, behavior: 'auto' }); }
 
-        // --- Landing and Info Panel Functions (Hide joystick) ---
+        // --- Landing and Info Panel Functions ---
         function landAndShowInfo(poi) {
             console.log(`DEBUG: Landing at POI ${poi.id}`); gameState = 'SHOWING_INFO';
             currentNearbyPOI = poi; helicopterState.speed = 0;
@@ -396,24 +389,26 @@
             joystickHandle.style.transform = `translate(-50%, -50%)`; joystickHandle.style.left = `50%`; joystickHandle.style.top = `50%`;
             joystickActiveTouchId = null;
             landIndicator.style.display = 'none'; landPrompt.style.display = 'none';
-            landButton.style.display = 'none'; joystickContainer.style.display = 'none'; // Hide joystick
+            landButton.style.display = 'none'; joystickContainer.style.display = 'none';
             infoTitle.textContent = `${poi.id}. ${poi.name}`; infoDescription.innerHTML = poi.description.replace(/\n/g, '<br>');
             mapContainer.style.opacity = '0'; infoPanel.classList.add('visible');
         }
         function hideInfoAndResumeFlight() {
             if (!currentNearbyPOI) return; console.log(`DEBUG: Resuming flight from POI ${currentNearbyPOI.id}`);
             infoPanel.classList.remove('visible'); mapContainer.style.opacity = '1';
-            joystickContainer.style.display = 'block'; // Show joystick
+            joystickContainer.style.display = 'block';
             helicopterState.x = currentNearbyPOI.x; helicopterState.y = currentNearbyPOI.y;
             helicopterState.speed = 0; centerViewOnHelicopter();
             gameState = 'FLYING';
         }
 
         // --- Start Game ---
-        // Calculate initial joystick dimensions after slight delay for rendering
-        setTimeout(calculateJoystickRadius, 100);
-        console.log("DEBUG: Starting game loop...");
-        requestAnimationFrame(gameLoop);
+        // Use requestAnimationFrame to ensure layout is calculated before getting joystick dimensions
+        requestAnimationFrame(() => {
+             calculateJoystickRadius();
+             console.log("DEBUG: Starting game loop...");
+             requestAnimationFrame(gameLoop);
+        });
     </script>
 </body>
 </html>
