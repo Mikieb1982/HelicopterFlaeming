@@ -33,6 +33,294 @@
         #map-image.loading { opacity: 0; }
         #map-image.error { opacity: 0.2; }
 
+        /* Helicopter - MODIFIED SIZE */
+        #helicopter {
+            position: absolute;
+            /* Doubled dimensions */
+            width: 60px;
+            height: 60px;
+            font-size: 60px; /* Controls size of emoji */
+            line-height: 60px; /* Helps vertically center emoji */
+            text-align: center;
+            transform: translate(-50%, -50%) rotate(0deg);
+            transform-origin: center center; transition: transform 0.05s linear;
+            z-index: 10; pointer-events: none;
+        }
+
+        /* Top Info */
+        #info {
+            position: fixed; top: 8px; left: 8px; /* Increased spacing */
+            background-color: rgba(0, 0, 0, 0.75); color: #fff;
+            padding: 6px 10px; border-radius: 4px; /* Sharper radius */
+            font-size: 12px; z-index: 30; pointer-events: none;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+        #keyboard-controls { display: none; }
+        @media (min-width: 768px) { #keyboard-controls { display: block; } }
+
+        /* Debug Info */
+        #debug-info {
+            position: fixed; bottom: 90px; /* Adjusted position */
+            left: 8px; background-color: rgba(200, 0, 0, 0.8); color: #fff;
+            padding: 5px 8px; border-radius: 3px; font-size: 10px;
+            z-index: 30; display: none; pointer-events: none;
+        }
+
+        /* Land Indicator */
+        #land-indicator {
+            position: fixed; bottom: 90px; /* Adjusted position */
+            left: 50%; transform: translateX(-50%);
+            background-color: rgba(255, 193, 7, 0.9); /* Yellow warning color */
+            color: #000; /* Black text for contrast */
+            padding: 6px 12px; border-radius: 4px; font-size: 14px;
+            font-weight: bold; z-index: 20; display: none;
+            text-align: center; pointer-events: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        /* Info Panel */
+        #info-panel {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.9); display: flex;
+            justify-content: center; align-items: center;
+            opacity: 0; visibility: hidden;
+            transition: opacity 0.5s ease-in-out, visibility 0s 0.5s;
+            z-index: 40; pointer-events: none;
+        }
+        #info-panel.visible { opacity: 1; visibility: visible; transition-delay: 0s; pointer-events: auto; }
+
+        /* Info Content Box */
+        #info-content {
+            background-color: #e0e0e0; /* Lighter gray panel */
+            color: #333; padding: 25px; border-radius: 6px;
+            width: 90%; max-height: 85%; overflow-y: auto;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4); position: relative;
+            border: 1px solid #bbb;
+        }
+        #info-content h2 { margin-top: 0; color: #111; border-bottom: 1px solid #aaa; padding-bottom: 10px; font-size: 1.3em; }
+        #info-content p { font-size: 1em; line-height: 1.5; }
+
+        /* Return Button */
+        #return-button {
+            display: block; margin: 20px auto 0; padding: 12px 25px;
+            font-size: 16px; font-weight: bold; color: #fff;
+            background: linear-gradient(to bottom, #6c757d, #495057); /* Gray gradient */
+            border: 1px solid #888; border-radius: 5px; cursor: pointer;
+            transition: background 0.2s, box-shadow 0.2s;
+            box-shadow: 0 2px 3px rgba(0,0,0,0.2);
+        }
+        #return-button:hover { background: linear-gradient(to bottom, #80888f, #5a6268); }
+        #return-button:active { box-shadow: inset 0 1px 3px rgba(0,0,0,0.3); }
+
+        /* Helicopter Touch Controls Styling */
+        #touch-controls {
+            position: fixed; bottom: 15px; left: 0; width: 100%;
+            display: flex; justify-content: space-between; align-items: flex-end;
+            z-index: 35; pointer-events: none; padding: 0 20px;
+            box-sizing: border-box;
+        }
+
+        /* Base style for directional/collective buttons */
+        #touch-controls button {
+            background: linear-gradient(to bottom, #4a4a4a, #303030); /* Dark metallic gradient */
+            border: 1px solid #666;
+            border-radius: 8px; /* Rounded rectangle */
+            width: 60px; /* Size */
+            height: 60px;
+            cursor: pointer; display: flex; justify-content: center; align-items: center;
+            pointer-events: auto; user-select: none; -webkit-user-select: none;
+            touch-action: manipulation;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3), /* Outer shadow */
+                        inset 0 1px 1px rgba(255, 255, 255, 0.05); /* Subtle inner highlight */
+            transition: transform 0.08s ease, box-shadow 0.08s ease, background 0.08s ease;
+        }
+        /* SVG Icon Styling */
+        #touch-controls button svg {
+            width: 60%; /* Relative size */
+            height: 60%;
+            fill: #e0e0e0; /* Light icon color */
+        }
+
+        /* Pressed state for directional/collective */
+        #touch-controls button:active {
+            background: linear-gradient(to top, #4a4a4a, #303030); /* Invert gradient */
+            box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.4); /* Inner shadow */
+            transform: scale(0.94); /* Press down effect */
+        }
+        #touch-controls button:active svg {
+            fill: #fff; /* Brighter icon when pressed */
+        }
+
+        .touch-group-left { display: flex; gap: 25px; } /* Pedal spacing */
+        .touch-group-right { display: flex; gap: 25px; } /* Collective spacing */
+
+        /* Land Button - Styled like a guarded switch */
+        #land-button {
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            width: 70px; height: 50px;
+            border-radius: 6px;
+            font-size: 16px; font-weight: bold; text-transform: uppercase;
+            background: linear-gradient(to bottom, #ffcc00, #cca300); /* Yellow gradient */
+            color: #212529; /* Dark text */
+            border: 1px solid #ffeb99;
+            /* Simulate a guard with box-shadow */
+            box-shadow: 0 0 0 3px #333, /* Outer dark ring */
+                        0 0 0 5px #555, /* Slightly lighter ring */
+                        4px 4px 8px rgba(0,0,0,0.4); /* Drop shadow */
+            display: none; justify-content: center; align-items: center;
+            z-index: 36; pointer-events: auto; user-select: none;
+            -webkit-user-select: none; touch-action: manipulation;
+            transition: transform 0.08s ease, box-shadow 0.08s ease, background 0.08s ease;
+        }
+         #land-button:active {
+             background: linear-gradient(to top, #ffcc00, #cca300);
+             box-shadow: 0 0 0 3px #333, 0 0 0 5px #555,
+                         inset 0 3px 5px rgba(0, 0, 0, 0.3); /* Inner shadow when pressed */
+             transform: translateX(-50%) scale(0.95);
+             color: #000;
+         }
+
+    </style>
+</head>
+<body>
+    <div id="info">
+        <span id="keyboard-controls">Controls: Arrows (Move), Ctrl (Thrust)<br></span>
+        <span id="land-prompt" style="color: #ffc107; font-weight: bold; display: none;">Press 'L' or Land Button</span><br> Speed: <span id="speed-info">0</span> | Angle: <span id="angle-info">0</span>&deg;
+    </div>
+    <div id="debug-info">Map Image Error! Check console (F12).</div>
+    <div id="land-indicator">Nearby: <span id="poi-name">POI</span><br>Press 'L' or Land Button</div>
+
+    <div id="map-container">
+        <div id="map-content">
+            <img id="map-image" class="loading" src="Heli Fläming/hoher_flaeming_map.jpg" alt="Hoher Fläming Map">
+            <div id="helicopter">🚁</div>
+        </div>
+    </div>
+
+    <div id="info-panel">
+        <div id="info-content">
+            <h2 id="info-title">Point of Interest</h2>
+            <p id="info-description">Details about the point of interest...</p>
+            <button id="return-button">Return to Flight</button>
+        </div>
+    </div>
+
+    <div id="touch-controls">
+        <div class="touch-group-left"> <button id="touch-left" aria-label="Turn Left">
+                <svg viewBox="0 0 24 24"><path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6 1.41-1.41z"/></svg>
+            </button>
+            <button id="touch-right" aria-label="Turn Right">
+                <svg viewBox="0 0 24 24"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></svg>
+            </button>
+        </div>
+        <div class="touch-group-right"> <button id="touch-up" aria-label="Thrust Up / Pitch Down">
+                 <svg viewBox="0 0 24 24"><path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6 1.41 1.41z"/></svg>
+            </button>
+            <button id="touch-down" aria-label="Thrust Down / Pitch Up">
+                 <svg viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
+            </button>
+        </div>
+    </div>
+    <button id="land-button" aria-label="Land">Land</button>
+
+
+    <script>
+        // --- Element References ---
+        const helicopterElement = document.getElementById('helicopter');
+        const mapContainer = document.getElementById('map-container');
+        const mapContent = document.getElementById('map-content');
+        const mapImage = document.getElementById('map-image');
+        const speedInfo = document.getElementById('speed-info');
+        const angleInfo = document.getElementById('angle-info');
+        const debugInfo = document.getElementById('debug-info');
+        const landIndicator = document.getElementById('land-indicator');
+        const landPrompt = document.getElementById('land-prompt');
+        const poiNameSpan = document.getElementById('poi-name');
+        const infoPanel = document.getElementById('info-panel');
+        const infoTitle = document.getElementById('info-title');
+        const infoDescription = document.getElementById('info-description');
+        const returnButton = document.getElementById('return-button');
+        const touchControlsContainer = document.getElementById('touch-controls');
+        const touchLeft = document.getElementById('touch-left');
+        const touchRight = document.getElementById('touch-right');
+        const touchUp = document.getElementById('touch-up');
+        const touchDown = document.getElementById('touch-down');
+        const landButton = document.getElementById('land-button');
+
+        console.log("Script starting...");
+
+        // --- Configuration ---
+        const MAP_WIDTH = 2048; const MAP_HEIGHT = 1448;
+        console.log(`Configured map dimensions: ${MAP_WIDTH}x${MAP_HEIGHT}`);
+        const startX = 1364; const startY = 603;
+        const turnRate = 3.0; const thrustPower = 0.15; const pitchPower = 0.05;
+        const maxSpeed = 5.0; const drag = 0.98; const minSpeed = 0.05;
+        const landingRadius = 60; // Keep landing radius the same relative to map
+
+        // --- POI Data (Unchanged) ---
+        const pointsOfInterest = [ { id: 1, name: "Stadt und Burg Ziesar", x: 470, y: 150, description: "Auf der Burg Ziesar befindet sich das Museum für brandenburgische Kirchen- und Kulturgeschichte des Mittelalters und die Touristinformation. Sehenswert sind hier auch die Schlosskapelle und der der weite Blick vom Storchenturm über den Ziesorer Vorfläming. Aber auch ein Spaziergang durch den historischen Stadtkern lohnt sich.\nTouristinformation Ziesar\n14793 Ziesar, Mühlentor 15A\nTel.: 033830 12735\nwww.burg-ziesar.de" }, { id: 2, name: "Gutspark Dahlen", x: 708, y: 357, description: "Der Gutspark erschließt sich auf einem kurzen Rundweg, wobei die Spazierende um den Schwanenteich besonders reizvoll ist. Zudem kann der Bauerngarten mit Kräutern und Duftpflanzen besucht werden. Gleich gegenüber dem Gutspark steht, etwas versteckt, eine sehenswerte Fachwerkkirche.\nWer gern Rad fährt, dem sei die Ton & Töpfe-Radtour empfohlen, die durch Dahlen führt." }, { id: 3, name: "Klein Briesener Bach mit Artesischem Brunnen", x: 998, y: 181, description: "Der Artesische Brunnen ist im idyllischen Örtchen Klein Briesen zu finden. Das Wasser steigt hier nur durch seinen Eigendruck empor und wird dem Klein Briesener Bach zugeführt. Wandernde können dem sich schlängelnden Bach auf dem Burgenwanderweg bis Ragösen folgen.\nEin Abstecher zur Fachwerkkirche in Klein Briesen lohnt genauso wie die Wanderung bis zum Aussichtsturm 'Schöne Aussicht'." }, { id: 4, name: "Paradies Dippmannsdorf", x: 1322, y: 265, description: "Hier sprudelt aus einigen Dutzend Quellen glasklares Wasser, das die Mühlenteiche speist. Der von alten Buchen, Eichen und Erlen bestandene Quelltopf wurde vorsichtig erschlossen. Ein Spaziergang lohnt sich zu jeder Jahreszeit und lässt sich gut mit einer Wanderung auf dem Kindererlebnispfad verbinden, der hier auf dem Burgenwanderweg verläuft.\nGleich nebenan verwöhnt die Gaststätte 'Paradies' seine Gäste." }, { id: 5, name: "Töpferort Görzke", x: 416, y: 439, description: "Ein Besuch der kleinen Museen und des Hofladens auf dem Handwerkerhof, ein kleiner Bummel entlang der Bauerngärten hinüber zum slawischen Burgwall und die Einkaufsmöglichkeiten in fünf Töpfereien lohnen den Besuch des Flämingortes.\nAuf dem Töpferwanderweg werden Wandernde mit weitläufigen Ausblicken auf das Tal der Buckau und die umliegende Fläminglandschaft belohnt." }, { id: 6, name: "Hagelberg", x: 946, y: 719, description: "Der Hagelberg, ein echter 'Zweihunderter', lädt zum Eintrag ins Gipfelbuch ein – nicht ohne Grund wird die Landschaft im Hohen Fläming auch mit einem Augenzwinkern das 'kleinste Mittelgebirge Deutschlands' genannt. Für den 'Aufstieg' zum Gipfelkreuz wird man mit einem schönen Blick über die Fläminglandschaft belohnt.\nUnweit davon öffnet am Wochenende auf dem historischen Gutshof in Klein Glien ein Café für Ausflüglerinnen und Ausflügler." }, { id: 7, name: "Bad Belzig mit Burg Eisenhardt", x: 1364, y: 603, description: "Auf der Burg Eisenhardt lässt sich die 1000-jährige Geschichte der Stadt hautnah erkunden. Vom Butterturm bietet sich wohl der schönste Ausblick auf Stadt und Umgebung. Unterhalb der Burg befinden sich die Burgwiesen, auf denen der barrierefreie Naturerlebnispfad die Lust zum Mitmachen weckt. In der SteinTherme sorgt jodhaltiges Thermalwasser für gesunde Entspannung.\nTourristinformation\n14806 Bad Belzig, Marktplatz 1\nTel.: 033841 94900\nwww.bad-belzig.de" }, { id: 8, name: "Aussichtspunkt Belziger Landschaftswiesen", x: 1616, y: 501, description: "Am Europaradweg R1 gelegen, bietet sich ein beeindruckender Blick in das Niederungsgebiet der Belziger Landschaftswiesen. Dort befindet sich eines der wichtigsten Vogelschutzgebiete Brandenburgs.\nWenn im Winterhalbjahr Großtrappengruppen pflanzliche Nahrung suchen, bieten sich vom Rastplatz aus sehr gute Beobachtungsmöglichkeiten." }, { id: 9, name: "Wiesenburg mit Schloss und Park", x: 836, y: 843, description: "Das Schloss erhielt seine heutige Gestalt Ende des 19. Jahrhunderts. Vom Schlossturm hat man eine eindrucksvolle Aussicht auf Wiesenburg und seine Umgebung. Der größtenteils als Landschaftspark gestaltete Schlosspark ist die bedeutendste Parkanlage zwischen Sanssouci und Wörlitz. Bis zum Bahnhof erstreckt sich diese Anlage, durch die auch der Kunstwanderweg führt.\nTouristerei Wiesenburg\n14827 Wiesenburg/Mark, Schlossstr. 1\nTel.: 033849 79898\nwww.wiesenburgmark.de" }, { id: 10, name: "Naturparkzentrum Hoher Fläming", x: 1170, y: 1231, description: "Das Besucherinformationszentrum ist die zentrale Anlaufstelle für alle Gäste. Hier erhält man die besten Tipps für Exkursionen in den Hohen Fläming und kann Fahrräder ausleihen. Neben dem Fläming-Laden mit regionalen Produkten gibt es eine spannende Naturpark-Erlebnisausstellung und einen 'Garten der Sinne'. Direkt vor dem Naturparkzentrum hält der Bus der Burgenlinie.\nNaturparkzentrum Hoher Fläming\n14823 Raben, Brennereiweg 45\nTel.: 033848 60004\nwww.flaeming.net" }, { id: 11, name: "Raben mit Burg Rabenstein", x: 1124, y: 1329, description: "Auf dem 'Steilen Hagen' liegt die südlichste der Flämingburgen, die Höhenburg Rabenstein. Von der Burg führt ein Erlebnispfad durch das Naturschutzgebiet Rabenstein hinunter ins Dorf und bis zum Naturparkzentrum.\nDie tagsüber offene Feldsteinkirche kann auch besucht werden.\nDer Gasthof Hemmerling bewirtet täglich außer montags seine Gäste." }, { id: 12, name: "Niemegk", x: 1624, y: 1135, description: "Die Kirche St. Johannis und das alte Rathaus prägen das Stadtzentrum. Vom Kirchturm bietet sich ein schöner Ausblick auf die Hügelketten des Fläming. Ein imposanter Wasserturm, der heute ein Brausemuseum, einen Regionalladen und eine Likörmanufaktur beherbergt, liegen am südlichen Ortsausgang auf dem Rundwanderweg 44.\nEin Ausflug mit dem Rad lohnt sich von Niemegk aus auf der Feldsteinkirchenradtour, die zu sieben flämingtypischen Feldsteinkirchen führt." }, { id: 13, name: "Flämingbuchen", x: 654, y: 1171, description: "In dem großen Waldgebiet der Brandsheide sind einige Inseln aus Buchen zu finden, wie in den Naturschutzgebieten 'Flämingbuchen' und 'Spring'. Auf den Rundwanderwegen 70 oder 71 lassen sich diese landschaftlichen Höhepunkte des Naturparks erleben. Startpunkte sind die Bahnhöfe Wiesenburg/Mark oder Medewitz, die am RE 7 liegen. Auf dem Findlingswanderweg warten größere und kleinere Findlinge darauf entdeckt zu werden." }, { id: 14, name: "Brautrummel mit Riesenstein", x: 1110, y: 1023, description: "Wie eine Sage berichtet, ertrank ein junges Brautpaar nach einem Gewitterregen in der Rummel, einem Trockental.\nHeute kann man auf einer Rundwanderung zum Riesenstein die besondere Natur in der Rummel erleben, Familienfotos auf dem Riesenstein schießen, ein Picknick im Grünen genießen und anschließend ein Nickerchen auf dem großen Feldbett machen." }, { id: 15, name: "Neuendorfer Rummel", x: 1482, y: 1309, description: "Die Rummeln, verzweigte, enge Trockentälchen, entstanden nach der Eiszeit und wurden durch Wassererosion stetig weiter vertieft. Wie grüne, bewaldete Finger strecken sie sich weit in die Agrarlandschaft hinein.\nÜber den Burgenwanderweg oder den Rundwanderweg 40 kann man die üppig bewachsene und steilwandige Neuendorfer Rummel durchwandern." }, { id: 16, name: "Garrey mit Aussichtsplattform", x: 1494, y: 1427, description: "Die Landschaft rings um Garrey bietet fantastische Ausblicke auch über Teile des sachsen-anhaltinischen Naturparks. Deshalb 'krönt' eine Aussichtsplattform das alte Wasserwerk, das aufwändig restauriert wurde und in dem sich eine kleine Ausstellung befindet.\nDer Ausflug lässt sich sehr gut mit einer Wanderung in die Neuendorfer Rummel und einer Einkehr ins Café Lehmann in Garrey verbinden." } ];
+        console.log(`Loaded ${pointsOfInterest.length} POIs.`);
+
+        // --- Game State ---
+        let helicopterState = { x: startX, y: startY, angle: -90, speed: 0 };
+        let controls = { turnLeft: false, turnRight: false, pitchDown: false, pitchUp: false, applyThrust: false };
+        let lastTimestamp = 0; let gameReady = false; let currentNearbyPOI = null; let gameState = 'FLYING';
+
+        // --- Image Loading Check (Unchanged) ---
+        mapImage.onload = () => { console.log("DEBUG: mapImage.onload fired!"); debugInfo.style.display = 'none'; mapImage.classList.remove('loading', 'error'); gameReady = true; console.log("DEBUG: gameReady set to true."); centerViewOnHelicopter(); if (mapImage.naturalWidth !== MAP_WIDTH || mapImage.naturalHeight !== MAP_HEIGHT) { console.warn(`Map image size mismatch!`); debugInfo.textContent = `Warning: Map size mismatch!`; debugInfo.style.backgroundColor = 'rgba(255, 165, 0, 0.7)'; debugInfo.style.display = 'block'; } else { console.log("DEBUG: Map dimensions match."); } };
+        mapImage.onerror = () => { console.error("DEBUG: mapImage.onerror fired!"); debugInfo.textContent = "Error loading map image!"; debugInfo.style.display = 'block'; mapImage.classList.remove('loading'); mapImage.classList.add('error'); gameReady = false; console.log("DEBUG: gameReady is false due to image error."); };
+        if (mapImage.complete && mapImage.naturalWidth > 0) { mapImage.onload(); } else if (mapImage.complete) { mapImage.onerror(); } else { console.log("DEBUG: Image not yet complete."); }
+
+        // --- Keyboard Control Listeners (Unchanged) ---
+        document.addEventListener('keydown', (event) => { if (gameState === 'SHOWING_INFO') return; if ((event.key === 'l' || event.key === 'L') && gameState === 'NEAR_POI' && currentNearbyPOI) { event.preventDefault(); landAndShowInfo(currentNearbyPOI); return; } switch (event.key) { case 'ArrowLeft': controls.turnLeft = true; break; case 'ArrowRight': controls.turnRight = true; break; case 'ArrowUp': controls.pitchDown = true; break; case 'ArrowDown': controls.pitchUp = true; break; case 'Control': controls.applyThrust = true; break; } });
+        document.addEventListener('keyup', (event) => { if (gameState === 'SHOWING_INFO') return; switch (event.key) { case 'ArrowLeft': controls.turnLeft = false; break; case 'ArrowRight': controls.turnRight = false; break; case 'ArrowUp': controls.pitchDown = false; break; case 'ArrowDown': controls.pitchUp = false; break; case 'Control': controls.applyThrust = false; break; } });
+
+        // --- Touch Control Listeners (Unchanged logic) ---
+        function handleTouchStart(event, controlFlag) { event.preventDefault(); if (gameState !== 'SHOWING_INFO') controls[controlFlag] = true; }
+        function handleTouchEnd(event, controlFlag) { if (gameState !== 'SHOWING_INFO') controls[controlFlag] = false; }
+        touchLeft.addEventListener('touchstart', (e) => handleTouchStart(e, 'turnLeft'), { passive: false });
+        touchLeft.addEventListener('touchend', (e) => handleTouchEnd(e, 'turnLeft'));
+        touchRight.addEventListener('touchstart', (e) => handleTouchStart(e, 'turnRight'), { passive: false });
+        touchRight.addEventListener('touchend', (e) => handleTouchEnd(e, 'turnRight'));
+        touchUp.addEventListener('touchstart', (e) => handleTouchStart(e, 'pitchDown'), { passive: false });
+        touchUp.addEventListener('touchend', (e) => handleTouchEnd(e, 'pitchDown'));
+        touchDown.addEventListener('touchstart', (e) => handleTouchStart(e, 'pitchUp'), { passive: false });
+        touchDown.addEventListener('touchend', (e) => handleTouchEnd(e, 'pitchUp'));
+        landButton.addEventListener('touchstart', (event) => { event.preventDefault(); if (gameState === 'NEAR_POI' && currentNearbyPOI) landAndShowInfo(currentNearbyPOI); }, { passive: false });
+
+        // --- UI Button Listeners (Unchanged) ---
+        returnButton.addEventListener('click', hideInfoAndResumeFlight);
+
+        // --- Game Loop (Unchanged) ---
+        function gameLoop(timestamp) { if (!lastTimestamp) lastTimestamp = timestamp; const deltaTime = (timestamp - lastTimestamp) / (1000 / 60); lastTimestamp = timestamp; if (gameReady && gameState !== 'SHOWING_INFO' && deltaTime > 0 && deltaTime < 10) { update(deltaTime); render(); centerViewOnHelicopter(); } requestAnimationFrame(gameLoop); }
+
+        // --- Update Logic (Unchanged) ---
+        function update(dt) { if (controls.turnLeft) helicopterState.angle -= turnRate * dt; if (controls.turnRight) helicopterState.angle += turnRate * dt; helicopterState.angle = (helicopterState.angle + 360) % 360; let acceleration = 0; if (controls.applyThrust || controls.pitchDown) acceleration += (controls.applyThrust ? thrustPower : 0) + pitchPower; if (controls.pitchUp) acceleration -= pitchPower; helicopterState.speed += acceleration * dt; helicopterState.speed *= Math.pow(drag, dt); if (helicopterState.speed < minSpeed && acceleration <= 0) helicopterState.speed = 0; helicopterState.speed = Math.max(0, Math.min(helicopterState.speed, maxSpeed)); const angleRad = helicopterState.angle * (Math.PI / 180); const vx = Math.cos(angleRad) * helicopterState.speed; const vy = Math.sin(angleRad) * helicopterState.speed; helicopterState.x += vx * dt; helicopterState.y += vy * dt; helicopterState.x = Math.max(0, Math.min(MAP_WIDTH, helicopterState.x)); helicopterState.y = Math.max(0, Math.min(MAP_HEIGHT, helicopterState.y)); let foundNearbyPOI = null; for (const poi of pointsOfInterest) { const dx = helicopterState.x - poi.x; const dy = helicopterState.y - poi.y; if (Math.sqrt(dx * dx + dy * dy) < landingRadius) { foundNearbyPOI = poi; break; } } if (foundNearbyPOI) { if (gameState === 'FLYING') console.log(`DEBUG: Near POI ${foundNearbyPOI.id}`); gameState = 'NEAR_POI'; currentNearbyPOI = foundNearbyPOI; poiNameSpan.textContent = foundNearbyPOI.name; landIndicator.style.display = 'block'; landPrompt.style.display = 'inline'; landButton.style.display = 'flex'; } else { if (gameState === 'NEAR_POI') { console.log("DEBUG: Moved away from POI"); landIndicator.style.display = 'none'; landPrompt.style.display = 'none'; landButton.style.display = 'none'; currentNearbyPOI = null; } gameState = 'FLYING'; } }
+
+        // --- Render Logic (Unchanged) ---
+        function render() { helicopterElement.style.left = `${helicopterState.x}px`; helicopterElement.style.top = `${helicopterState.y}px`; const visualAngle = helicopterState.angle + 90; helicopterElement.style.transform = `translate(-50%, -50%) rotate(${visualAngle}deg)`; speedInfo.textContent = helicopterState.speed.toFixed(2); let displayAngle = Math.round((helicopterState.angle + 90 + 360) % 360); angleInfo.textContent = `${displayAngle}°`; }
+
+        // --- Map Scrolling Function (Unchanged) ---
+        function centerViewOnHelicopter() { const scrollX = helicopterState.x - mapContainer.clientWidth / 2; const scrollY = helicopterState.y - mapContainer.clientHeight / 2; mapContainer.scrollTo({ left: scrollX, top: scrollY, behavior: 'auto' }); }
+
+        // --- Landing and Info Panel Functions (Unchanged) ---
+        function landAndShowInfo(poi) { console.log(`DEBUG: Landing at POI ${poi.id}`); gameState = 'SHOWING_INFO'; currentNearbyPOI = poi; helicopterState.speed = 0; Object.keys(controls).forEach(key => controls[key] = false); landIndicator.style.display = 'none'; landPrompt.style.display = 'none'; landButton.style.display = 'none'; touchControlsContainer.style.display = 'none'; infoTitle.textContent = `${poi.id}. ${poi.name}`; infoDescription.innerHTML = poi.description.replace(/\n/g, '<br>'); mapContainer.style.opacity = '0'; infoPanel.classList.add('visible'); }
+        function hideInfoAndResumeFlight() { if (!currentNearbyPOI) return; console.log(`DEBUG: Resuming flight from POI ${currentNearbyPOI.id}`); infoPanel.classList.remove('visible'); mapContainer.style.opacity = '1'; touchControlsContainer.style.display = 'flex'; helicopterState.x = currentNearbyPOI.x; helicopterState.y = currentNearbyPOI.y; helicopterState.speed = 0; centerViewOnHelicopter(); gameState = 'FLYING'; }
+
+        // --- Start Game (Unchanged) ---
+        console.log("DEBUG: Starting game loop...");
+        requestAnimationFrame(gameLoop);
+    </script>
+</body>
+</html>
+
+; width: 2048px; height: 1448px; }
+
+        /* Map Image */
+        #map-image { display: block; width: 100%; height: 100%; opacity: 1; transition: opacity 0.5s; pointer-events: none; }
+        #map-image.loading { opacity: 0; }
+        #map-image.error { opacity: 0.2; }
+
         /* Helicopter */
         #helicopter {
             position: absolute; width: 30px; height: 30px;
