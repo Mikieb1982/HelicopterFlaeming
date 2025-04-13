@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Hoher Fläming POI Explorer (Orientation Layout)</title>
+    <title>Hoher Fläming POI Explorer (Auto Slowdown)</title>
     <style>
         /* Basic page styling */
         html, body {
@@ -58,7 +58,7 @@
 
         /* Debug Info */
         #debug-info {
-            position: fixed; bottom: 150px; /* Adjusted default position */
+            position: fixed; bottom: 150px;
             left: 8px; background-color: rgba(200, 0, 0, 0.8); color: #fff;
             padding: 5px 8px; border-radius: 3px; font-size: 10px;
             z-index: 30; display: none; pointer-events: none;
@@ -111,13 +111,9 @@
         /* --- Joystick Styling --- */
         #joystick-container {
             position: fixed;
-            /* --- Default (Portrait): Bottom Left --- */
-            bottom: 20px;
-            left: 20px;
-            right: auto; /* Ensure right is not set */
+            bottom: 20px; left: 20px; right: auto; /* Default: Portrait Left */
             width: 120px; height: 120px;
-            z-index: 35;
-            pointer-events: none;
+            z-index: 35; pointer-events: none;
         }
         #joystick-base {
             position: absolute; width: 100%; height: 100%; border-radius: 50%;
@@ -139,11 +135,8 @@
         /* Land Button Styling */
         #land-button {
             position: fixed;
-             /* --- Default (Portrait): Bottom Right --- */
-            bottom: 20px;
-            right: 20px;
-            left: auto; /* Ensure left is not set */
-            transform: none; /* Remove any previous transform */
+            bottom: 20px; right: 20px; left: auto; /* Default: Portrait Right */
+            transform: none;
             width: 70px; height: 50px; border-radius: 6px;
             font-size: 16px; font-weight: bold; text-transform: uppercase;
             background: linear-gradient(to bottom, #ffcc00, #cca300); color: #212529;
@@ -163,23 +156,9 @@
 
         /* --- Landscape Orientation Styles --- */
         @media (orientation: landscape) {
-            #joystick-container {
-                /* Landscape: Bottom Right */
-                left: auto; /* Override default */
-                right: 20px;
-            }
-            #land-button {
-                /* Landscape: Above Joystick (Bottom Right) */
-                bottom: 150px; /* Joystick bottom (20) + height (120) + gap (10) */
-                right: 20px;
-                left: auto; /* Override default */
-                transform: none; /* Ensure no conflicting transform */
-            }
-             #debug-info {
-                /* Adjust debug info position in landscape if needed */
-                 bottom: 20px;
-                 left: 150px; /* Place it away from joystick */
-             }
+            #joystick-container { left: auto; right: 20px; }
+            #land-button { bottom: 150px; right: 20px; left: auto; transform: none; }
+            #debug-info { bottom: 20px; left: 150px; }
         }
 
     </style>
@@ -246,7 +225,8 @@
         const turnRate = 3.0;
         const forwardThrustPower = 0.15;
         const maxSpeed = 5.0;
-        const drag = 0.98;
+        const normalDrag = 0.98; // Normal drag when flying
+        const landingZoneDrag = 0.85; // Stronger drag when near POI
         const minSpeed = 0.05;
         const landingRadius = 60;
         let joystickMaxRadius = 0;
@@ -261,17 +241,7 @@
         let lastTimestamp = 0; let gameReady = false; let currentNearbyPOI = null; let gameState = 'FLYING';
 
         // --- Image Loading Check ---
-        mapImage.onload = () => {
-            console.log("DEBUG: mapImage.onload fired!"); debugInfo.style.display = 'none';
-            mapImage.classList.remove('loading', 'error'); gameReady = true;
-            console.log("DEBUG: gameReady set to true.");
-            calculateJoystickRadius(); // Calculate dimensions now
-            centerViewOnHelicopter();
-            if (mapImage.naturalWidth !== MAP_WIDTH || mapImage.naturalHeight !== MAP_HEIGHT) {
-                console.warn(`Map image size mismatch!`); debugInfo.textContent = `Warning: Map size mismatch!`;
-                debugInfo.style.backgroundColor = 'rgba(255, 165, 0, 0.7)'; debugInfo.style.display = 'block';
-            } else { console.log("DEBUG: Map dimensions match."); }
-        };
+        mapImage.onload = () => { console.log("DEBUG: mapImage.onload fired!"); debugInfo.style.display = 'none'; mapImage.classList.remove('loading', 'error'); gameReady = true; console.log("DEBUG: gameReady set to true."); calculateJoystickRadius(); centerViewOnHelicopter(); if (mapImage.naturalWidth !== MAP_WIDTH || mapImage.naturalHeight !== MAP_HEIGHT) { console.warn(`Map image size mismatch!`); debugInfo.textContent = `Warning: Map size mismatch!`; debugInfo.style.backgroundColor = 'rgba(255, 165, 0, 0.7)'; debugInfo.style.display = 'block'; } else { console.log("DEBUG: Map dimensions match."); } };
         mapImage.onerror = () => { console.error("DEBUG: mapImage.onerror fired!"); debugInfo.textContent = "Error loading map image!"; debugInfo.style.display = 'block'; mapImage.classList.remove('loading'); mapImage.classList.add('error'); gameReady = false; console.log("DEBUG: gameReady is false due to image error."); };
         if (mapImage.complete && mapImage.naturalWidth > 0) { mapImage.onload(); } else if (mapImage.complete) { mapImage.onerror(); } else { console.log("DEBUG: Image not yet complete."); }
 
@@ -282,58 +252,10 @@
         let joystickActiveTouchId = null;
         let baseRect, baseCenterX, baseCenterY;
 
-        function calculateJoystickRadius() {
-             if(joystickBase && joystickHandle) {
-                joystickMaxRadius = joystickBase.offsetWidth / 2 - joystickHandle.offsetWidth / 2;
-                baseRect = joystickBase.getBoundingClientRect();
-                baseCenterX = baseRect.left + baseRect.width / 2;
-                baseCenterY = baseRect.top + baseRect.height / 2;
-                console.log("DEBUG: Joystick radius calculated:", joystickMaxRadius);
-             } else {
-                 console.error("DEBUG: Joystick elements not found for radius calculation.");
-                 joystickMaxRadius = 50; // Fallback
-             }
-        }
-
-        function handleJoystickTouch(event) {
-            if (gameState === 'SHOWING_INFO' || !joystickMaxRadius) return;
-            event.preventDefault();
-            for (let i = 0; i < event.changedTouches.length; i++) {
-                let touch = event.changedTouches[i];
-                if (event.type === 'touchstart') {
-                    if (joystickActiveTouchId === null && (touch.target === joystickHandle || touch.target === joystickBase)) {
-                        joystickActiveTouchId = touch.identifier; joystickState.active = true;
-                        updateJoystick(touch.clientX, touch.clientY);
-                    }
-                } else if (event.type === 'touchmove') {
-                    if (touch.identifier === joystickActiveTouchId) updateJoystick(touch.clientX, touch.clientY);
-                } else if (event.type === 'touchend' || event.type === 'touchcancel') {
-                    if (touch.identifier === joystickActiveTouchId) {
-                        joystickActiveTouchId = null; joystickState.active = false; joystickState.magnitude = 0;
-                        joystickHandle.style.transform = `translate(-50%, -50%)`;
-                        joystickHandle.style.left = `50%`; joystickHandle.style.top = `50%`;
-                    }
-                }
-            }
-        }
-
-        function updateJoystick(touchX, touchY) {
-            let deltaX = touchX - baseCenterX; let deltaY = touchY - baseCenterY;
-            let angleRad = Math.atan2(deltaY, deltaX);
-            joystickState.targetAngle = angleRad * (180 / Math.PI);
-            let distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-            let clampedDistance = Math.min(distance, joystickMaxRadius);
-            joystickState.magnitude = joystickMaxRadius > 0 ? (clampedDistance / joystickMaxRadius) : 0;
-            let handleX = (Math.cos(angleRad) * clampedDistance); let handleY = (Math.sin(angleRad) * clampedDistance);
-            joystickHandle.style.left = `calc(50% + ${handleX}px)`; joystickHandle.style.top = `calc(50% + ${handleY}px)`;
-            joystickHandle.style.transform = `translate(-50%, -50%)`;
-        }
-
-        document.addEventListener('touchstart', handleJoystickTouch, { passive: false });
-        document.addEventListener('touchmove', handleJoystickTouch, { passive: false });
-        document.addEventListener('touchend', handleJoystickTouch, { passive: false });
-        document.addEventListener('touchcancel', handleJoystickTouch, { passive: false });
-        window.addEventListener('resize', calculateJoystickRadius);
+        function calculateJoystickRadius() { if(joystickBase && joystickHandle) { joystickMaxRadius = joystickBase.offsetWidth / 2 - joystickHandle.offsetWidth / 2; baseRect = joystickBase.getBoundingClientRect(); baseCenterX = baseRect.left + baseRect.width / 2; baseCenterY = baseRect.top + baseRect.height / 2; console.log("DEBUG: Joystick radius calculated:", joystickMaxRadius); } else { console.error("DEBUG: Joystick elements not found for radius calculation."); joystickMaxRadius = 50; } }
+        function handleJoystickTouch(event) { if (gameState === 'SHOWING_INFO' || !joystickMaxRadius) return; event.preventDefault(); for (let i = 0; i < event.changedTouches.length; i++) { let touch = event.changedTouches[i]; if (event.type === 'touchstart') { if (joystickActiveTouchId === null && (touch.target === joystickHandle || touch.target === joystickBase)) { joystickActiveTouchId = touch.identifier; joystickState.active = true; updateJoystick(touch.clientX, touch.clientY); } } else if (event.type === 'touchmove') { if (touch.identifier === joystickActiveTouchId) updateJoystick(touch.clientX, touch.clientY); } else if (event.type === 'touchend' || event.type === 'touchcancel') { if (touch.identifier === joystickActiveTouchId) { joystickActiveTouchId = null; joystickState.active = false; joystickState.magnitude = 0; joystickHandle.style.transform = `translate(-50%, -50%)`; joystickHandle.style.left = `50%`; joystickHandle.style.top = `50%`; } } } }
+        function updateJoystick(touchX, touchY) { let deltaX = touchX - baseCenterX; let deltaY = touchY - baseCenterY; let angleRad = Math.atan2(deltaY, deltaX); joystickState.targetAngle = angleRad * (180 / Math.PI); let distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY); let clampedDistance = Math.min(distance, joystickMaxRadius); joystickState.magnitude = joystickMaxRadius > 0 ? (clampedDistance / joystickMaxRadius) : 0; let handleX = (Math.cos(angleRad) * clampedDistance); let handleY = (Math.sin(angleRad) * clampedDistance); joystickHandle.style.left = `calc(50% + ${handleX}px)`; joystickHandle.style.top = `calc(50% + ${handleY}px)`; joystickHandle.style.transform = `translate(-50%, -50%)`; }
+        document.addEventListener('touchstart', handleJoystickTouch, { passive: false }); document.addEventListener('touchmove', handleJoystickTouch, { passive: false }); document.addEventListener('touchend', handleJoystickTouch, { passive: false }); document.addEventListener('touchcancel', handleJoystickTouch, { passive: false }); window.addEventListener('resize', calculateJoystickRadius);
 
         // --- UI Button Listeners ---
         returnButton.addEventListener('click', hideInfoAndResumeFlight);
@@ -342,8 +264,34 @@
         // --- Game Loop ---
         function gameLoop(timestamp) { if (!lastTimestamp) lastTimestamp = timestamp; const deltaTime = (timestamp - lastTimestamp) / (1000 / 60); lastTimestamp = timestamp; if (gameReady && gameState !== 'SHOWING_INFO' && deltaTime > 0 && deltaTime < 10) { update(deltaTime); render(); centerViewOnHelicopter(); } requestAnimationFrame(gameLoop); }
 
-        // --- Update Logic ---
+        // --- Update Logic (MODIFIED to include auto-slowdown) ---
         function update(dt) {
+             // --- POI Detection (Moved earlier to set gameState for physics) ---
+             let wasNearPOI = (gameState === 'NEAR_POI'); // Track previous state
+             let foundNearbyPOI = null;
+             for (const poi of pointsOfInterest) {
+                 const dx = helicopterState.x - poi.x; const dy = helicopterState.y - poi.y;
+                 if (Math.sqrt(dx * dx + dy * dy) < landingRadius) {
+                     foundNearbyPOI = poi;
+                     break;
+                 }
+             }
+             // Update gameState based on proximity BEFORE applying physics
+             if (foundNearbyPOI) {
+                 if (!wasNearPOI) console.log(`DEBUG: Entering landing zone for POI ${foundNearbyPOI.id}`);
+                 gameState = 'NEAR_POI';
+                 currentNearbyPOI = foundNearbyPOI; // Keep track even if not landed
+             } else {
+                 if (wasNearPOI) console.log("DEBUG: Exiting landing zone");
+                 // Only transition back to FLYING if not actually showing info
+                 if (gameState !== 'SHOWING_INFO') {
+                     gameState = 'FLYING';
+                     currentNearbyPOI = null;
+                 }
+             }
+
+
+            // --- Rotation (Smoothly turn towards joystick angle) ---
             if (joystickState.active) {
                 let currentAngle = helicopterState.angle; let targetAngle = joystickState.targetAngle;
                 let angleDiff = targetAngle - currentAngle;
@@ -353,20 +301,52 @@
                 else { helicopterState.angle += (angleDiff > 0 ? 1 : -1) * turnAmount; }
                 helicopterState.angle = (helicopterState.angle + 360) % 360;
             }
+
+            // --- Speed / Acceleration (Based on joystick magnitude) ---
             let acceleration = 0;
-            if (joystickState.active) { acceleration += forwardThrustPower * joystickState.magnitude; }
+            if (joystickState.active) {
+                acceleration += forwardThrustPower * joystickState.magnitude;
+            }
             helicopterState.speed += acceleration * dt;
-            helicopterState.speed *= Math.pow(drag, dt);
-            if (helicopterState.speed < minSpeed && !joystickState.active) { helicopterState.speed = 0; }
+
+            // --- Drag (Apply normal or landing zone drag) ---
+            const currentDrag = (gameState === 'NEAR_POI') ? landingZoneDrag : normalDrag;
+            helicopterState.speed *= Math.pow(currentDrag, dt);
+
+            // --- Speed Clamping ---
+            if (helicopterState.speed < minSpeed && !joystickState.active) {
+                // Allow speed to drop lower if in landing zone due to high drag
+                if (gameState !== 'NEAR_POI' || helicopterState.speed < 0.01) {
+                     helicopterState.speed = 0;
+                }
+            }
             helicopterState.speed = Math.max(0, Math.min(helicopterState.speed, maxSpeed));
+
+            // --- Movement (Uses current angle and calculated speed) ---
             const angleRad = helicopterState.angle * (Math.PI / 180);
             const vx = Math.cos(angleRad) * helicopterState.speed; const vy = Math.sin(angleRad) * helicopterState.speed;
             helicopterState.x += vx * dt; helicopterState.y += vy * dt;
-            helicopterState.x = Math.max(0, Math.min(MAP_WIDTH, helicopterState.x)); helicopterState.y = Math.max(0, Math.min(MAP_HEIGHT, helicopterState.y));
-            let foundNearbyPOI = null;
-            for (const poi of pointsOfInterest) { const dx = helicopterState.x - poi.x; const dy = helicopterState.y - poi.y; if (Math.sqrt(dx * dx + dy * dy) < landingRadius) { foundNearbyPOI = poi; break; } }
-            if (foundNearbyPOI) { if (gameState === 'FLYING') console.log(`DEBUG: Near POI ${foundNearbyPOI.id}`); gameState = 'NEAR_POI'; currentNearbyPOI = foundNearbyPOI; poiNameSpan.textContent = foundNearbyPOI.name; landIndicator.style.display = 'block'; landPrompt.style.display = 'inline'; landButton.style.display = 'flex'; joystickContainer.style.display = 'block';} else { if (gameState === 'NEAR_POI') { console.log("DEBUG: Moved away from POI"); landIndicator.style.display = 'none'; landPrompt.style.display = 'none'; landButton.style.display = 'none'; currentNearbyPOI = null; } gameState = 'FLYING'; }
+
+            // --- Boundary Collision ---
+            helicopterState.x = Math.max(0, Math.min(MAP_WIDTH, helicopterState.x));
+            helicopterState.y = Math.max(0, Math.min(MAP_HEIGHT, helicopterState.y));
+
+            // --- Update UI based on gameState (Moved after physics) ---
+             if (gameState === 'NEAR_POI') {
+                 poiNameSpan.textContent = currentNearbyPOI.name; // Update name
+                 landIndicator.style.display = 'block';
+                 landPrompt.style.display = 'inline';
+                 landButton.style.display = 'flex'; // Show land button
+                 joystickContainer.style.display = 'block'; // Ensure joystick is visible
+             } else if (gameState === 'FLYING') {
+                 landIndicator.style.display = 'none';
+                 landPrompt.style.display = 'none';
+                 landButton.style.display = 'none'; // Hide land button
+                 currentNearbyPOI = null; // Ensure this is cleared if flying
+             }
+             // Note: SHOWING_INFO state hides controls in landAndShowInfo/hideInfoAndResumeFlight
         }
+
 
         // --- Render Logic ---
         function render() {
@@ -383,7 +363,7 @@
 
         // --- Landing and Info Panel Functions ---
         function landAndShowInfo(poi) {
-            console.log(`DEBUG: Landing at POI ${poi.id}`); gameState = 'SHOWING_INFO';
+            console.log(`DEBUG: Landing at POI ${poi.id}`); gameState = 'SHOWING_INFO'; // Set state FIRST
             currentNearbyPOI = poi; helicopterState.speed = 0;
             joystickState.active = false; joystickState.magnitude = 0;
             joystickHandle.style.transform = `translate(-50%, -50%)`; joystickHandle.style.left = `50%`; joystickHandle.style.top = `50%`;
@@ -399,11 +379,13 @@
             joystickContainer.style.display = 'block';
             helicopterState.x = currentNearbyPOI.x; helicopterState.y = currentNearbyPOI.y;
             helicopterState.speed = 0; centerViewOnHelicopter();
+            // Reset state to FLYING, update() will re-evaluate if still near POI
             gameState = 'FLYING';
+            // Recalculate joystick dimensions in case of resize while panel was open
+            calculateJoystickRadius();
         }
 
         // --- Start Game ---
-        // Use requestAnimationFrame to ensure layout is calculated before getting joystick dimensions
         requestAnimationFrame(() => {
              calculateJoystickRadius();
              console.log("DEBUG: Starting game loop...");
@@ -412,4 +394,5 @@
     </script>
 </body>
 </html>
+
 
