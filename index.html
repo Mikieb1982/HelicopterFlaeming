@@ -13,7 +13,7 @@
             height: 100%;
             width: 100%;
             background-color: #333; /* Dark background */
-            font-family: sans-serif; /* Simple font */
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"; /* System fonts */
             position: relative; /* Needed for absolute/fixed positioning context */
         }
 
@@ -37,235 +37,202 @@
         /* Inner div to hold the actual map dimensions */
         #map-content {
             position: relative; /* Context for helicopter */
-            /* !!! Set dimensions matching the image and JS constants !!! */
             width: 2048px;
             height: 1448px;
-            /* !!! END OF DIMENSIONS !!! */
         }
 
 
         /* The map image itself */
         #map-image {
-            display: block; /* Remove extra space below image */
-            width: 100%; /* Fill map-content */
+            display: block;
+            width: 100%;
             height: 100%;
-            opacity: 1; /* Fully visible by default */
-            transition: opacity 0.5s; /* Fade effect for loading */
-            pointer-events: none; /* Prevent image dragging interfering */
+            opacity: 1;
+            transition: opacity 0.5s;
+            pointer-events: none;
         }
-        /* Style while loading */
-        #map-image.loading {
-            opacity: 0;
-        }
-        /* Style if error occurs */
-        #map-image.error {
-            opacity: 0.2;
-        }
+        #map-image.loading { opacity: 0; }
+        #map-image.error { opacity: 0.2; }
 
         /* Helicopter icon/element styling */
         #helicopter {
-            position: absolute; /* Position relative to map-content */
-            /* Size of the helicopter element */
+            position: absolute;
             width: 30px;
             height: 30px;
-            font-size: 30px; /* Emoji size */
-            line-height: 30px; /* Center emoji vertically */
-            text-align: center; /* Center emoji horizontally */
-            /* Initial position set by JS */
-            transform: translate(-50%, -50%) rotate(0deg); /* Center precisely and set initial rotation */
-            transform-origin: center center; /* Rotate around the center */
-            transition: transform 0.05s linear; /* Smooth rotation */
-            z-index: 10; /* Ensure it's above the map */
-            pointer-events: none; /* Prevent interfering with map clicks */
+            font-size: 30px;
+            line-height: 30px;
+            text-align: center;
+            transform: translate(-50%, -50%) rotate(0deg);
+            transform-origin: center center;
+            transition: transform 0.05s linear;
+            z-index: 10;
+            pointer-events: none;
         }
 
-        /* Top-left info box (controls, speed, angle) */
+        /* Top-left info box */
         #info {
-            position: fixed; /* Fixed position on screen */
+            position: fixed;
             top: 5px;
             left: 5px;
-            background-color: rgba(0, 0, 0, 0.7); /* Semi-transparent black */
-            color: #fff; /* White text */
+            background-color: rgba(0, 0, 0, 0.7);
+            color: #fff;
             padding: 5px 8px;
             border-radius: 5px;
-            font-size: 12px; /* Slightly smaller for mobile */
-            z-index: 30; /* Above map and helicopter */
-            pointer-events: none; /* Don't block map interaction */
+            font-size: 12px;
+            z-index: 30;
+            pointer-events: none;
         }
-        /* Hide keyboard controls text on small screens */
-        #keyboard-controls {
-             display: none;
-        }
-        @media (min-width: 768px) { /* Show on larger screens */
-             #keyboard-controls {
-                 display: block;
-             }
-        }
+        #keyboard-controls { display: none; }
+        @media (min-width: 768px) { #keyboard-controls { display: block; } }
 
 
-        /* Bottom-left debug info (for map loading errors) */
+        /* Bottom-left debug info */
         #debug-info {
-            position: fixed; /* Fixed position */
-            bottom: 70px; /* Position above controls */
+            position: fixed;
+            bottom: 80px; /* Adjusted position slightly */
             left: 5px;
-            background-color: rgba(255, 0, 0, 0.7); /* Semi-transparent red */
+            background-color: rgba(255, 0, 0, 0.7);
             color: #fff;
             padding: 5px;
             border-radius: 3px;
             font-size: 10px;
             z-index: 30;
-            display: none; /* Hidden by default */
+            display: none;
             pointer-events: none;
         }
 
         /* Indicator when near a POI */
         #land-indicator {
-            position: fixed; /* Fixed position */
-            bottom: 70px; /* Position above controls */
+            position: fixed;
+            bottom: 80px; /* Adjusted position slightly */
             left: 50%;
-            transform: translateX(-50%); /* Center horizontally */
-            background-color: rgba(0, 100, 0, 0.8); /* Semi-transparent dark green */
+            transform: translateX(-50%);
+            background-color: rgba(0, 100, 0, 0.8);
             color: #fff;
             padding: 6px 10px;
             border-radius: 5px;
             font-size: 14px;
             font-weight: bold;
-            z-index: 20; /* Above helicopter */
-            display: none; /* Hidden by default */
+            z-index: 20;
+            display: none;
             text-align: center;
             pointer-events: none;
         }
 
         /* Full-screen overlay for POI details */
         #info-panel {
-            position: fixed; /* Fixed position */
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.9); /* Dark overlay */
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            opacity: 0; /* Hidden by default */
-            visibility: hidden; /* Hidden by default */
-            transition: opacity 0.5s ease-in-out, visibility 0s 0.5s; /* Fade effect */
-            z-index: 40; /* Highest */
-            pointer-events: none; /* Don't intercept clicks when hidden */
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            display: flex; justify-content: center; align-items: center;
+            opacity: 0; visibility: hidden;
+            transition: opacity 0.5s ease-in-out, visibility 0s 0.5s;
+            z-index: 40;
+            pointer-events: none;
         }
-        /* Make panel visible */
-        #info-panel.visible {
-            opacity: 1;
-            visibility: visible;
-            transition-delay: 0s; /* Show immediately */
-            pointer-events: auto; /* Allow interaction */
-        }
+        #info-panel.visible { opacity: 1; visibility: visible; transition-delay: 0s; pointer-events: auto; }
 
         /* Content box within the info panel */
         #info-content {
-            background-color: #f4f4f4; /* Light background */
-            color: #333; /* Dark text */
-            padding: 20px; /* Reduced padding for mobile */
-            border-radius: 10px;
-            width: 90%; /* Use percentage width */
-            max-height: 80%; /* Limit height */
-            overflow-y: auto; /* Add scrollbar if content overflows */
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3); /* Drop shadow */
+            background-color: #f4f4f4; color: #333;
+            padding: 20px; border-radius: 10px;
+            width: 90%; max-height: 80%;
+            overflow-y: auto;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
             position: relative;
         }
-        #info-content h2 {
-            margin-top: 0;
-            color: #555;
-            border-bottom: 1px solid #ccc;
-            padding-bottom: 10px;
-            font-size: 1.2em;
-        }
-         #info-content p {
-             font-size: 0.9em;
-             line-height: 1.4;
-         }
+        #info-content h2 { margin-top: 0; color: #555; border-bottom: 1px solid #ccc; padding-bottom: 10px; font-size: 1.2em; }
+        #info-content p { font-size: 0.9em; line-height: 1.4; }
 
         /* Button to close the info panel */
         #return-button {
-            display: block; /* Make it a block element */
-            margin: 15px auto 0; /* Center horizontally with top margin */
-            padding: 12px 25px; /* Larger tap area */
-            font-size: 16px;
-            font-weight: bold;
-            color: #fff;
-            background-color: #007bff; /* Blue */
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
+            display: block; margin: 15px auto 0;
+            padding: 12px 25px; font-size: 16px; font-weight: bold;
+            color: #fff; background-color: #007bff;
+            border: none; border-radius: 5px; cursor: pointer;
             transition: background-color 0.2s;
         }
-        #return-button:hover {
-            background-color: #0056b3; /* Darker blue on hover */
-        }
+        #return-button:hover { background-color: #0056b3; }
 
-        /* --- Touch Controls --- */
+        /* --- Touch Controls Styling --- */
         #touch-controls {
             position: fixed;
             bottom: 10px;
             left: 0;
             width: 100%;
             display: flex;
-            justify-content: space-between; /* Space out control groups */
+            justify-content: space-between;
             align-items: flex-end;
-            z-index: 35; /* Above map, below info panel */
-            pointer-events: none; /* Allow clicks only on buttons */
-            padding: 0 10px; /* Padding on sides */
-            box-sizing: border-box; /* Include padding in width */
+            z-index: 35;
+            pointer-events: none;
+            padding: 0 15px; /* Increased padding */
+            box-sizing: border-box;
         }
+
+        /* --- NEW STYLES for cooler buttons --- */
         #touch-controls button {
-            background-color: rgba(50, 50, 50, 0.8); /* Dark semi-transparent */
-            color: white;
-            border: 1px solid rgba(255, 255, 255, 0.5);
-            border-radius: 50%; /* Circular buttons */
-            width: 50px; /* Button size */
-            height: 50px;
-            font-size: 24px; /* Icon size */
+            /* Base appearance */
+            background: linear-gradient(to bottom, #555, #333); /* Dark gradient */
+            color: #eee; /* Light text/icon */
+            border: 1px solid #666; /* Slightly lighter border */
+            border-radius: 50%; /* Keep circular */
+            width: 55px; /* Slightly larger */
+            height: 55px;
+            font-size: 28px; /* Larger icon */
             font-weight: bold;
             cursor: pointer;
             display: flex;
             justify-content: center;
             align-items: center;
-            pointer-events: auto; /* Enable clicks on buttons */
-            user-select: none; /* Prevent text selection */
-            -webkit-user-select: none; /* Safari */
-            touch-action: manipulation; /* Improve touch responsiveness */
+            pointer-events: auto;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+            box-shadow: 0 3px 5px rgba(0, 0, 0, 0.4), /* Outer shadow */
+                        inset 0 1px 1px rgba(255, 255, 255, 0.1); /* Subtle inner highlight */
+            transition: transform 0.1s ease, box-shadow 0.1s ease, background 0.1s ease; /* Smooth transitions */
         }
-         #touch-controls button:active {
-             background-color: rgba(80, 80, 80, 0.9); /* Slightly lighter when pressed */
-         }
 
-        /* Grouping for left/right */
-        .touch-group-left {
-            display: flex;
-            gap: 15px; /* Space between left/right buttons */
+        /* Pressed state */
+        #touch-controls button:active {
+            background: linear-gradient(to top, #555, #333); /* Invert gradient */
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5); /* Inner shadow for pressed look */
+            transform: scale(0.95); /* Slightly shrink */
+            color: #fff;
         }
-         /* Grouping for up/down */
-        .touch-group-right {
-            display: flex;
-            gap: 15px; /* Space between up/down buttons */
-        }
+        /* --- END OF NEW STYLES --- */
+
+        .touch-group-left { display: flex; gap: 20px; } /* Increased gap */
+        .touch-group-right { display: flex; gap: 20px; } /* Increased gap */
 
         /* Land button specific styling */
         #land-button {
             position: fixed;
-            bottom: 10px;
+            bottom: 15px; /* Align with other buttons */
             left: 50%;
             transform: translateX(-50%);
-            width: 80px; /* Wider button */
-            height: 50px;
-            border-radius: 10px; /* Rounded rectangle */
+            width: 90px; /* Wider button */
+            height: 55px; /* Match height */
+            border-radius: 10px; /* Keep rounded rectangle */
             font-size: 18px;
-            background-color: rgba(0, 100, 0, 0.8); /* Green */
+            font-weight: bold;
+            /* Use a distinct but high-contrast color */
+            background: linear-gradient(to bottom, #0080ff, #0059b3); /* Blue gradient */
+            color: white;
+            border: 1px solid #00aaff;
+            box-shadow: 0 3px 5px rgba(0, 0, 0, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.2);
             display: none; /* Hidden by default */
-            z-index: 36; /* Above other controls */
+            z-index: 36;
+            pointer-events: auto;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+            transition: transform 0.1s ease, box-shadow 0.1s ease, background 0.1s ease;
         }
          #land-button:active {
-             background-color: rgba(0, 130, 0, 0.9);
+             background: linear-gradient(to top, #0080ff, #0059b3); /* Invert gradient */
+             box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5);
+             transform: translateX(-50%) scale(0.95); /* Keep centering transform */
          }
 
     </style>
@@ -285,7 +252,7 @@
         <div id="map-content">
             <img id="map-image" class="loading" src="Heli Fläming/hoher_flaeming_map.jpg" alt="Hoher Fläming Map">
             <div id="helicopter">🚁</div>
-            </div>
+        </div>
     </div>
 
     <div id="info-panel">
@@ -313,7 +280,7 @@
         // --- Element References ---
         const helicopterElement = document.getElementById('helicopter');
         const mapContainer = document.getElementById('map-container');
-        const mapContent = document.getElementById('map-content'); // Reference to inner map div
+        const mapContent = document.getElementById('map-content');
         const mapImage = document.getElementById('map-image');
         const speedInfo = document.getElementById('speed-info');
         const angleInfo = document.getElementById('angle-info');
@@ -336,17 +303,12 @@
         console.log("Script starting...");
 
         // --- Configuration ---
-        const MAP_WIDTH = 2048; // Width of map-content and image
-        const MAP_HEIGHT = 1448; // Height of map-content and image
+        const MAP_WIDTH = 2048;
+        const MAP_HEIGHT = 1448;
         console.log(`Configured map dimensions: ${MAP_WIDTH}x${MAP_HEIGHT}`);
-        const startX = 1364;
-        const startY = 603;
-        const turnRate = 3.0;
-        const thrustPower = 0.15;
-        const pitchPower = 0.05;
-        const maxSpeed = 5.0;
-        const drag = 0.98;
-        const minSpeed = 0.05;
+        const startX = 1364; const startY = 603;
+        const turnRate = 3.0; const thrustPower = 0.15; const pitchPower = 0.05;
+        const maxSpeed = 5.0; const drag = 0.98; const minSpeed = 0.05;
         const landingRadius = 60;
 
         // --- POI Data ---
@@ -372,49 +334,27 @@
 
         // --- Game State ---
         let helicopterState = { x: startX, y: startY, angle: -90, speed: 0 };
-        // Unified controls object for keyboard and touch
-        let controls = {
-            turnLeft: false, turnRight: false,
-            pitchDown: false, // Corresponds to ArrowUp / TouchUp (Thrust/Accelerate)
-            pitchUp: false,   // Corresponds to ArrowDown / TouchDown (Brake/Decelerate)
-            applyThrust: false // Corresponds to Ctrl key (extra thrust) - *No touch equivalent added yet*
-        };
-        let lastTimestamp = 0;
-        let gameReady = false;
-        let currentNearbyPOI = null;
-        let gameState = 'FLYING'; // 'FLYING', 'NEAR_POI', 'SHOWING_INFO'
+        let controls = { turnLeft: false, turnRight: false, pitchDown: false, pitchUp: false, applyThrust: false };
+        let lastTimestamp = 0; let gameReady = false; let currentNearbyPOI = null; let gameState = 'FLYING';
 
         // --- Image Loading Check ---
         mapImage.onload = () => {
-            console.log("DEBUG: mapImage.onload fired!");
-            debugInfo.style.display = 'none';
-            mapImage.classList.remove('loading', 'error');
-            gameReady = true;
-            console.log("DEBUG: gameReady set to true.");
-            // Center map initially (optional)
-            centerViewOnHelicopter();
+            console.log("DEBUG: mapImage.onload fired!"); debugInfo.style.display = 'none';
+            mapImage.classList.remove('loading', 'error'); gameReady = true;
+            console.log("DEBUG: gameReady set to true."); centerViewOnHelicopter();
             if (mapImage.naturalWidth !== MAP_WIDTH || mapImage.naturalHeight !== MAP_HEIGHT) {
-                console.warn(`Map image actual size (${mapImage.naturalWidth}x${mapImage.naturalHeight}) differs from configured size (${MAP_WIDTH}x${MAP_HEIGHT})!`);
-                debugInfo.textContent = `Warning: Map size mismatch! Check CSS/JS constants.`;
-                debugInfo.style.backgroundColor = 'rgba(255, 165, 0, 0.7)';
-                debugInfo.style.display = 'block';
-            } else {
-                 console.log("DEBUG: Map dimensions match configuration.");
-            }
+                console.warn(`Map image size mismatch!`); debugInfo.textContent = `Warning: Map size mismatch!`;
+                debugInfo.style.backgroundColor = 'rgba(255, 165, 0, 0.7)'; debugInfo.style.display = 'block';
+            } else { console.log("DEBUG: Map dimensions match."); }
         };
         mapImage.onerror = () => {
-            console.error("DEBUG: mapImage.onerror fired!");
-            debugInfo.textContent = "Error loading map image! Check path and ensure file exists.";
-            debugInfo.style.display = 'block';
-            mapImage.classList.remove('loading');
-            mapImage.classList.add('error');
-            gameReady = false;
-            console.log("DEBUG: gameReady is false due to image error.");
+            console.error("DEBUG: mapImage.onerror fired!"); debugInfo.textContent = "Error loading map image!";
+            debugInfo.style.display = 'block'; mapImage.classList.remove('loading'); mapImage.classList.add('error');
+            gameReady = false; console.log("DEBUG: gameReady is false due to image error.");
         };
-        // Trigger load check if image might be cached
         if (mapImage.complete && mapImage.naturalWidth > 0) { mapImage.onload(); }
         else if (mapImage.complete) { mapImage.onerror(); }
-        else { console.log("DEBUG: Image not yet complete, waiting for onload/onerror event."); }
+        else { console.log("DEBUG: Image not yet complete."); }
 
 
         // --- Keyboard Control Listeners ---
@@ -423,13 +363,12 @@
             if ((event.key === 'l' || event.key === 'L') && gameState === 'NEAR_POI' && currentNearbyPOI) {
                 event.preventDefault(); landAndShowInfo(currentNearbyPOI); return;
             }
-            // Map keys to control flags
             switch (event.key) {
                 case 'ArrowLeft': controls.turnLeft = true; break;
                 case 'ArrowRight': controls.turnRight = true; break;
-                case 'ArrowUp': controls.pitchDown = true; break; // ArrowUp = Pitch Down (Accelerate)
-                case 'ArrowDown': controls.pitchUp = true; break;   // ArrowDown = Pitch Up (Decelerate)
-                case 'Control': controls.applyThrust = true; break; // Keep Ctrl for extra thrust if needed
+                case 'ArrowUp': controls.pitchDown = true; break;
+                case 'ArrowDown': controls.pitchUp = true; break;
+                case 'Control': controls.applyThrust = true; break;
             }
         });
         document.addEventListener('keyup', (event) => {
@@ -445,108 +384,73 @@
 
         // --- Touch Control Listeners ---
         function handleTouchStart(event, controlFlag) {
-            event.preventDefault(); // Prevent zoom/scroll
-            if (gameState !== 'SHOWING_INFO') {
-                controls[controlFlag] = true;
-            }
+            event.preventDefault();
+            if (gameState !== 'SHOWING_INFO') controls[controlFlag] = true;
         }
         function handleTouchEnd(event, controlFlag) {
-            // Don't prevent default here, allows button :active state to clear
-            if (gameState !== 'SHOWING_INFO') {
-                 controls[controlFlag] = false;
-            }
+            if (gameState !== 'SHOWING_INFO') controls[controlFlag] = false;
         }
-
         touchLeft.addEventListener('touchstart', (e) => handleTouchStart(e, 'turnLeft'), { passive: false });
         touchLeft.addEventListener('touchend', (e) => handleTouchEnd(e, 'turnLeft'));
         touchRight.addEventListener('touchstart', (e) => handleTouchStart(e, 'turnRight'), { passive: false });
         touchRight.addEventListener('touchend', (e) => handleTouchEnd(e, 'turnRight'));
-        touchUp.addEventListener('touchstart', (e) => handleTouchStart(e, 'pitchDown'), { passive: false }); // TouchUp = Pitch Down
+        touchUp.addEventListener('touchstart', (e) => handleTouchStart(e, 'pitchDown'), { passive: false });
         touchUp.addEventListener('touchend', (e) => handleTouchEnd(e, 'pitchDown'));
-        touchDown.addEventListener('touchstart', (e) => handleTouchStart(e, 'pitchUp'), { passive: false }); // TouchDown = Pitch Up
+        touchDown.addEventListener('touchstart', (e) => handleTouchStart(e, 'pitchUp'), { passive: false });
         touchDown.addEventListener('touchend', (e) => handleTouchEnd(e, 'pitchUp'));
-
-        // Land Button Listener
         landButton.addEventListener('touchstart', (event) => {
             event.preventDefault();
-            if (gameState === 'NEAR_POI' && currentNearbyPOI) {
-                landAndShowInfo(currentNearbyPOI);
-            }
+            if (gameState === 'NEAR_POI' && currentNearbyPOI) landAndShowInfo(currentNearbyPOI);
         }, { passive: false });
 
-
         // --- UI Button Listeners ---
-        returnButton.addEventListener('click', hideInfoAndResumeFlight); // Works for touch/mouse
-
+        returnButton.addEventListener('click', hideInfoAndResumeFlight);
 
         // --- Game Loop ---
         function gameLoop(timestamp) {
             if (!lastTimestamp) lastTimestamp = timestamp;
             const deltaTime = (timestamp - lastTimestamp) / (1000 / 60);
             lastTimestamp = timestamp;
-
             if (gameReady && gameState !== 'SHOWING_INFO' && deltaTime > 0 && deltaTime < 10) {
-                update(deltaTime);
-                render();
-                // Scroll map container to keep helicopter roughly centered
-                centerViewOnHelicopter();
+                update(deltaTime); render(); centerViewOnHelicopter();
             }
-
             requestAnimationFrame(gameLoop);
         }
 
         // --- Update Logic ---
         function update(dt) {
-            // Rotation
             if (controls.turnLeft) helicopterState.angle -= turnRate * dt;
             if (controls.turnRight) helicopterState.angle += turnRate * dt;
             helicopterState.angle = (helicopterState.angle + 360) % 360;
-
-            // Speed / Acceleration
             let acceleration = 0;
-            // Combine Ctrl thrust with pitch down (ArrowUp/TouchUp)
             if (controls.applyThrust || controls.pitchDown) acceleration += (controls.applyThrust ? thrustPower : 0) + pitchPower;
-            if (controls.pitchUp) acceleration -= pitchPower; // Pitching up decreases speed
-
+            if (controls.pitchUp) acceleration -= pitchPower;
             helicopterState.speed += acceleration * dt;
             helicopterState.speed *= Math.pow(drag, dt);
             if (helicopterState.speed < minSpeed && acceleration <= 0) helicopterState.speed = 0;
             helicopterState.speed = Math.max(0, Math.min(helicopterState.speed, maxSpeed));
-
-            // Movement
             const angleRad = helicopterState.angle * (Math.PI / 180);
             const vx = Math.cos(angleRad) * helicopterState.speed;
             const vy = Math.sin(angleRad) * helicopterState.speed;
-            helicopterState.x += vx * dt;
-            helicopterState.y += vy * dt;
-
-            // Boundary Collision (within the map content div)
+            helicopterState.x += vx * dt; helicopterState.y += vy * dt;
             helicopterState.x = Math.max(0, Math.min(MAP_WIDTH, helicopterState.x));
             helicopterState.y = Math.max(0, Math.min(MAP_HEIGHT, helicopterState.y));
-
-            // POI Detection
             let foundNearbyPOI = null;
             for (const poi of pointsOfInterest) {
                 const dx = helicopterState.x - poi.x; const dy = helicopterState.y - poi.y;
                 if (Math.sqrt(dx * dx + dy * dy) < landingRadius) { foundNearbyPOI = poi; break; }
             }
-
-            // Update Game State based on POI proximity
             if (foundNearbyPOI) {
                 if (gameState === 'FLYING') console.log(`DEBUG: Near POI ${foundNearbyPOI.id}`);
-                gameState = 'NEAR_POI';
-                currentNearbyPOI = foundNearbyPOI;
+                gameState = 'NEAR_POI'; currentNearbyPOI = foundNearbyPOI;
                 poiNameSpan.textContent = foundNearbyPOI.name;
-                landIndicator.style.display = 'block';
-                landPrompt.style.display = 'inline';
-                landButton.style.display = 'block'; // Show touch land button
+                landIndicator.style.display = 'block'; landPrompt.style.display = 'inline';
+                landButton.style.display = 'flex'; // Use flex to align center
             } else {
                 if (gameState === 'NEAR_POI') {
                      console.log("DEBUG: Moved away from POI");
-                     landIndicator.style.display = 'none';
-                     landPrompt.style.display = 'none';
-                     landButton.style.display = 'none'; // Hide touch land button
-                     currentNearbyPOI = null;
+                     landIndicator.style.display = 'none'; landPrompt.style.display = 'none';
+                     landButton.style.display = 'none'; currentNearbyPOI = null;
                 }
                 gameState = 'FLYING';
             }
@@ -554,13 +458,9 @@
 
         // --- Render Logic ---
         function render() {
-            // Update helicopter position relative to map-content
-            helicopterElement.style.left = `${helicopterState.x}px`;
-            helicopterElement.style.top = `${helicopterState.y}px`;
+            helicopterElement.style.left = `${helicopterState.x}px`; helicopterElement.style.top = `${helicopterState.y}px`;
             const visualAngle = helicopterState.angle + 90;
             helicopterElement.style.transform = `translate(-50%, -50%) rotate(${visualAngle}deg)`;
-
-            // Update UI text
             speedInfo.textContent = helicopterState.speed.toFixed(2);
             let displayAngle = Math.round((helicopterState.angle + 90 + 360) % 360);
             angleInfo.textContent = `${displayAngle}°`;
@@ -568,54 +468,29 @@
 
         // --- Map Scrolling Function ---
         function centerViewOnHelicopter() {
-            // Calculate desired scroll position to center helicopter
             const scrollX = helicopterState.x - mapContainer.clientWidth / 2;
             const scrollY = helicopterState.y - mapContainer.clientHeight / 2;
-
-            // Smoothly scroll the map container
-            mapContainer.scrollTo({
-                left: scrollX,
-                top: scrollY,
-                behavior: 'smooth' // Use 'auto' if smooth scrolling feels laggy
-            });
+            mapContainer.scrollTo({ left: scrollX, top: scrollY, behavior: 'auto' }); // Changed to 'auto' for potentially better performance
         }
-
 
         // --- Landing and Info Panel Functions ---
         function landAndShowInfo(poi) {
-            console.log(`DEBUG: Landing at POI ${poi.id}`);
-            gameState = 'SHOWING_INFO';
-            currentNearbyPOI = poi;
-            helicopterState.speed = 0;
-            // Reset controls
+            console.log(`DEBUG: Landing at POI ${poi.id}`); gameState = 'SHOWING_INFO';
+            currentNearbyPOI = poi; helicopterState.speed = 0;
             Object.keys(controls).forEach(key => controls[key] = false);
-
-            landIndicator.style.display = 'none';
-            landPrompt.style.display = 'none';
-            landButton.style.display = 'none'; // Hide land button
-            touchControlsContainer.style.display = 'none'; // Hide movement controls
-
+            landIndicator.style.display = 'none'; landPrompt.style.display = 'none';
+            landButton.style.display = 'none'; touchControlsContainer.style.display = 'none';
             infoTitle.textContent = `${poi.id}. ${poi.name}`;
             infoDescription.innerHTML = poi.description.replace(/\n/g, '<br>');
-            mapContainer.style.opacity = '0'; // Fade out map
-            infoPanel.classList.add('visible'); // Fade in info panel
+            mapContainer.style.opacity = '0'; infoPanel.classList.add('visible');
         }
-
         function hideInfoAndResumeFlight() {
-            if (!currentNearbyPOI) return;
-            console.log(`DEBUG: Resuming flight from POI ${currentNearbyPOI.id}`);
-            infoPanel.classList.remove('visible');
-            mapContainer.style.opacity = '1';
-            touchControlsContainer.style.display = 'flex'; // Show movement controls
-
-            // Reset position and speed
-            helicopterState.x = currentNearbyPOI.x;
-            helicopterState.y = currentNearbyPOI.y;
-            helicopterState.speed = 0;
-            // Center view on resume
-            centerViewOnHelicopter();
-
-            gameState = 'FLYING'; // Will transition to NEAR_POI in next update if still close
+            if (!currentNearbyPOI) return; console.log(`DEBUG: Resuming flight from POI ${currentNearbyPOI.id}`);
+            infoPanel.classList.remove('visible'); mapContainer.style.opacity = '1';
+            touchControlsContainer.style.display = 'flex';
+            helicopterState.x = currentNearbyPOI.x; helicopterState.y = currentNearbyPOI.y;
+            helicopterState.speed = 0; centerViewOnHelicopter();
+            gameState = 'FLYING';
         }
 
         // --- Start Game ---
