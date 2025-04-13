@@ -6,7 +6,524 @@
     <title>Hoher Fläming POI Explorer (Coords Updated)</title>
     <style>
         /* CSS Styles (Unchanged) */
-        body{margin:0;overflow:hidden;background-color:#333;display:flex;justify-content:center;align-items:center;height:100vh;font-family:sans-serif}#map-container{position:relative;/* !!! SET THESE TO YOUR MAP IMAGE'S EXACT DIMENSIONS !!! */width:2048px;height:1448px;/* !!! END OF DIMENSIONS !!! */overflow:hidden;cursor:crosshair;border:2px solid black;background-color:#555;transition:opacity .5s ease-in-out}#map-image{display:block;width:100%;height:100%;opacity:1;transition:opacity .5s}#map-image.loading{opacity:0}#map-image.error{opacity:.2}#helicopter{position:absolute;top:50%;left:50%;font-size:30px;transform:translate(-50%,-50%) rotate(0deg);transform-origin:center center;transition:transform .05s linear;z-index:10;pointer-events:none}#info{position:absolute;top:10px;left:10px;background-color:rgba(0,0,0,.7);color:#fff;padding:8px;border-radius:5px;font-size:14px;z-index:30}#debug-info{position:absolute;bottom:10px;left:10px;background-color:rgba(255,0,0,.7);color:#fff;padding:5px;border-radius:3px;font-size:12px;z-index:30;display:none}#land-indicator{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);background-color:rgba(0,100,0,.8);color:#fff;padding:8px 15px;border-radius:5px;font-size:16px;font-weight:700;z-index:20;display:none;text-align:center}#info-panel{position:absolute;top:0;left:0;width:100%;height:100%;background-color:rgba(0,0,0,.9);display:flex;justify-content:center;align-items:center;opacity:0;visibility:hidden;transition:opacity .5s ease-in-out,visibility 0s .5s;z-index:25;pointer-events:none}#info-panel.visible{opacity:1;visibility:visible;transition-delay:0s;pointer-events:auto}#info-content{background-color:#f4f4f4;color:#333;padding:30px;border-radius:10px;max-width:80%;max-height:80%;overflow-y:auto;box-shadow:0 5px 15px rgba(0,0,0,.3);position:relative}#info-content h2{margin-top:0;color:#555;border-bottom:1px solid #ccc;padding-bottom:10px}#return-button{display:block;margin:20px auto 0;padding:10px 20px;font-size:16px;font-weight:700;color:#fff;background-color:#007bff;border:none;border-radius:5px;cursor:pointer;transition:background-color .2s}#return-button:hover{background-color:#0056b3}
+        body{margin:0;overflow:hidden;background-color:#333;<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hoher Fläming POI Explorer</title>
+    <style>
+        /* Basic page styling */
+        body {
+            margin: 0;
+            overflow: hidden; /* Prevent scrollbars */
+            background-color: #333; /* Dark background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh; /* Full viewport height */
+            font-family: sans-serif; /* Simple font */
+        }
+
+        /* Container for the map */
+        #map-container {
+            position: relative;
+            /* !!! IMPORTANT: Set these to your map image's exact dimensions !!! */
+            width: 2048px;
+            height: 1448px;
+            /* !!! END OF DIMENSIONS !!! */
+            overflow: hidden; /* Hide parts of the map outside this box */
+            cursor: crosshair; /* Indicate interaction */
+            border: 2px solid black;
+            background-color: #555; /* Fallback background */
+            transition: opacity 0.5s ease-in-out; /* Fade effect for info panel */
+        }
+
+        /* The map image itself */
+        #map-image {
+            display: block; /* Remove extra space below image */
+            width: 100%;
+            height: 100%;
+            opacity: 1; /* Fully visible by default */
+            transition: opacity 0.5s; /* Fade effect for loading */
+        }
+        /* Style while loading */
+        #map-image.loading {
+            opacity: 0;
+        }
+        /* Style if error occurs */
+        #map-image.error {
+            opacity: 0.2;
+        }
+
+        /* Helicopter icon styling */
+        #helicopter {
+            position: absolute; /* Position relative to map-container */
+            top: 50%; /* Initial position (will be updated by JS) */
+            left: 50%;
+            font-size: 30px; /* Helicopter size */
+            transform: translate(-50%, -50%) rotate(0deg); /* Center precisely and set initial rotation */
+            transform-origin: center center; /* Rotate around the center */
+            transition: transform 0.05s linear; /* Smooth rotation */
+            z-index: 10; /* Ensure it's above the map */
+            pointer-events: none; /* Prevent interfering with map clicks */
+        }
+
+        /* Top-left info box (controls, speed, angle) */
+        #info {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background-color: rgba(0, 0, 0, 0.7); /* Semi-transparent black */
+            color: #fff; /* White text */
+            padding: 8px;
+            border-radius: 5px;
+            font-size: 14px;
+            z-index: 30; /* Above map and helicopter */
+        }
+
+        /* Bottom-left debug info (for map loading errors) */
+        #debug-info {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background-color: rgba(255, 0, 0, 0.7); /* Semi-transparent red */
+            color: #fff;
+            padding: 5px;
+            border-radius: 3px;
+            font-size: 12px;
+            z-index: 30;
+            display: none; /* Hidden by default */
+        }
+
+        /* Indicator when near a POI */
+        #land-indicator {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%); /* Center horizontally */
+            background-color: rgba(0, 100, 0, 0.8); /* Semi-transparent dark green */
+            color: #fff;
+            padding: 8px 15px;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: bold;
+            z-index: 20; /* Above helicopter */
+            display: none; /* Hidden by default */
+            text-align: center;
+        }
+
+        /* Full-screen overlay for POI details */
+        #info-panel {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9); /* Dark overlay */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0; /* Hidden by default */
+            visibility: hidden; /* Hidden by default */
+            transition: opacity 0.5s ease-in-out, visibility 0s 0.5s; /* Fade effect */
+            z-index: 25; /* Above map/helicopter, below UI info */
+            pointer-events: none; /* Don't intercept clicks when hidden */
+        }
+        /* Make panel visible */
+        #info-panel.visible {
+            opacity: 1;
+            visibility: visible;
+            transition-delay: 0s; /* Show immediately */
+            pointer-events: auto; /* Allow interaction */
+        }
+
+        /* Content box within the info panel */
+        #info-content {
+            background-color: #f4f4f4; /* Light background */
+            color: #333; /* Dark text */
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 80%; /* Limit width */
+            max-height: 80%; /* Limit height */
+            overflow-y: auto; /* Add scrollbar if content overflows */
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3); /* Drop shadow */
+            position: relative; /* For potential future absolute positioning inside */
+        }
+        #info-content h2 {
+            margin-top: 0;
+            color: #555;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 10px;
+        }
+
+        /* Button to close the info panel */
+        #return-button {
+            display: block; /* Make it a block element */
+            margin: 20px auto 0; /* Center horizontally with top margin */
+            padding: 10px 20px;
+            font-size: 16px;
+            font-weight: bold;
+            color: #fff;
+            background-color: #007bff; /* Blue */
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        #return-button:hover {
+            background-color: #0056b3; /* Darker blue on hover */
+        }
+    </style>
+</head>
+<body>
+    <div id="info">
+        Controls: Arrows (Move), Ctrl (Thrust)<br>
+        <span id="land-prompt" style="color: yellow; font-weight: bold; display: none;">Press 'L' to Land</span><br>
+        Speed: <span id="speed-info">0</span> | Angle: <span id="angle-info">0</span>&deg;
+    </div>
+    <div id="debug-info">Map Image Error! Check console (F12).</div>
+    <div id="land-indicator">Nearby: <span id="poi-name">POI</span><br>Press 'L' to Land</div>
+
+    <div id="map-container">
+        <img id="map-image" class="loading" src="hoher_flaeming_map.jpg" alt="Hoher Fläming Map">
+        <div id="helicopter">🚁</div>
+    </div>
+
+    <div id="info-panel">
+        <div id="info-content">
+            <h2 id="info-title">Point of Interest</h2>
+            <p id="info-description">Details about the point of interest...</p>
+            <button id="return-button">Return to Flight</button>
+        </div>
+    </div>
+
+    <script>
+        // --- Element References ---
+        // Get references to HTML elements needed for the game
+        const helicopterElement = document.getElementById('helicopter');
+        const mapContainer = document.getElementById('map-container');
+        const mapImage = document.getElementById('map-image');
+        const speedInfo = document.getElementById('speed-info');
+        const angleInfo = document.getElementById('angle-info');
+        const debugInfo = document.getElementById('debug-info');
+        const landIndicator = document.getElementById('land-indicator');
+        const landPrompt = document.getElementById('land-prompt'); // Reference for the 'Press L' prompt
+        const poiNameSpan = document.getElementById('poi-name'); // Span inside land indicator
+        const infoPanel = document.getElementById('info-panel');
+        const infoTitle = document.getElementById('info-title');
+        const infoDescription = document.getElementById('info-description');
+        const returnButton = document.getElementById('return-button');
+        console.log("Script starting..."); // Log script start
+
+        // --- Configuration ---
+        // Map dimensions (MUST match the actual image size and CSS)
+        const MAP_WIDTH = 2048;
+        const MAP_HEIGHT = 1448;
+        console.log(`Configured map dimensions: ${MAP_WIDTH}x${MAP_HEIGHT}`);
+
+        // Starting position (coordinates on the map image)
+        // Start at Bad Belzig/Burg Eisenhardt (POI 7) using provided coords
+        const startX = 1364;
+        const startY = 603;
+
+        // Helicopter physics/controls
+        const turnRate = 3.0;       // Degrees per update cycle
+        const thrustPower = 0.15;   // Speed increase per update with Ctrl
+        const pitchPower = 0.05;    // Speed increase/decrease with Up/Down arrows
+        const maxSpeed = 5.0;       // Maximum speed
+        const drag = 0.98;          // Speed multiplier each update (slows down)
+        const minSpeed = 0.05;      // Speed below which helicopter stops if not accelerating
+        const landingRadius = 60;   // Pixels distance from POI center to trigger landing prompt
+
+        // --- POI Data (Points of Interest) ---
+        // Array of objects, each representing a landing spot
+        // Coordinates (x, y) are pixels from the top-left of the map image.
+        const pointsOfInterest = [
+             // POI 1: Estimated coordinates - ADJUST IF NEEDED
+             { id: 1, name: "Stadt und Burg Ziesar", x: 470, y: 150, description: "Auf der Burg Ziesar befindet sich das Museum für brandenburgische Kirchen- und Kulturgeschichte des Mittelalters und die Touristinformation. Sehenswert sind hier auch die Schlosskapelle und der der weite Blick vom Storchenturm über den Ziesorer Vorfläming. Aber auch ein Spaziergang durch den historischen Stadtkern lohnt sich.\nTouristinformation Ziesar\n14793 Ziesar, Mühlentor 15A\nTel.: 033830 12735\nwww.burg-ziesar.de" },
+             // POIs 2-16: Using your provided coordinates
+             { id: 2, name: "Gutspark Dahlen", x: 708, y: 357, description: "Der Gutspark erschließt sich auf einem kurzen Rundweg, wobei die Spazierende um den Schwanenteich besonders reizvoll ist. Zudem kann der Bauerngarten mit Kräutern und Duftpflanzen besucht werden. Gleich gegenüber dem Gutspark steht, etwas versteckt, eine sehenswerte Fachwerkkirche.\nWer gern Rad fährt, dem sei die Ton & Töpfe-Radtour empfohlen, die durch Dahlen führt." },
+             { id: 3, name: "Klein Briesener Bach mit Artesischem Brunnen", x: 998, y: 181, description: "Der Artesische Brunnen ist im idyllischen Örtchen Klein Briesen zu finden. Das Wasser steigt hier nur durch seinen Eigendruck empor und wird dem Klein Briesener Bach zugeführt. Wandernde können dem sich schlängelnden Bach auf dem Burgenwanderweg bis Ragösen folgen.\nEin Abstecher zur Fachwerkkirche in Klein Briesen lohnt genauso wie die Wanderung bis zum Aussichtsturm 'Schöne Aussicht'." },
+             { id: 4, name: "Paradies Dippmannsdorf", x: 1322, y: 265, description: "Hier sprudelt aus einigen Dutzend Quellen glasklares Wasser, das die Mühlenteiche speist. Der von alten Buchen, Eichen und Erlen bestandene Quelltopf wurde vorsichtig erschlossen. Ein Spaziergang lohnt sich zu jeder Jahreszeit und lässt sich gut mit einer Wanderung auf dem Kindererlebnispfad verbinden, der hier auf dem Burgenwanderweg verläuft.\nGleich nebenan verwöhnt die Gaststätte 'Paradies' seine Gäste." },
+             { id: 5, name: "Töpferort Görzke", x: 416, y: 439, description: "Ein Besuch der kleinen Museen und des Hofladens auf dem Handwerkerhof, ein kleiner Bummel entlang der Bauerngärten hinüber zum slawischen Burgwall und die Einkaufsmöglichkeiten in fünf Töpfereien lohnen den Besuch des Flämingortes.\nAuf dem Töpferwanderweg werden Wandernde mit weitläufigen Ausblicken auf das Tal der Buckau und die umliegende Fläminglandschaft belohnt." },
+             { id: 6, name: "Hagelberg", x: 946, y: 719, description: "Der Hagelberg, ein echter 'Zweihunderter', lädt zum Eintrag ins Gipfelbuch ein – nicht ohne Grund wird die Landschaft im Hohen Fläming auch mit einem Augenzwinkern das 'kleinste Mittelgebirge Deutschlands' genannt. Für den 'Aufstieg' zum Gipfelkreuz wird man mit einem schönen Blick über die Fläminglandschaft belohnt.\nUnweit davon öffnet am Wochenende auf dem historischen Gutshof in Klein Glien ein Café für Ausflüglerinnen und Ausflügler." },
+             { id: 7, name: "Bad Belzig mit Burg Eisenhardt", x: 1364, y: 603, description: "Auf der Burg Eisenhardt lässt sich die 1000-jährige Geschichte der Stadt hautnah erkunden. Vom Butterturm bietet sich wohl der schönste Ausblick auf Stadt und Umgebung. Unterhalb der Burg befinden sich die Burgwiesen, auf denen der barrierefreie Naturerlebnispfad die Lust zum Mitmachen weckt. In der SteinTherme sorgt jodhaltiges Thermalwasser für gesunde Entspannung.\nTourristinformation\n14806 Bad Belzig, Marktplatz 1\nTel.: 033841 94900\nwww.bad-belzig.de" },
+             { id: 8, name: "Aussichtspunkt Belziger Landschaftswiesen", x: 1616, y: 501, description: "Am Europaradweg R1 gelegen, bietet sich ein beeindruckender Blick in das Niederungsgebiet der Belziger Landschaftswiesen. Dort befindet sich eines der wichtigsten Vogelschutzgebiete Brandenburgs.\nWenn im Winterhalbjahr Großtrappengruppen pflanzliche Nahrung suchen, bieten sich vom Rastplatz aus sehr gute Beobachtungsmöglichkeiten." },
+             { id: 9, name: "Wiesenburg mit Schloss und Park", x: 836, y: 843, description: "Das Schloss erhielt seine heutige Gestalt Ende des 19. Jahrhunderts. Vom Schlossturm hat man eine eindrucksvolle Aussicht auf Wiesenburg und seine Umgebung. Der größtenteils als Landschaftspark gestaltete Schlosspark ist die bedeutendste Parkanlage zwischen Sanssouci und Wörlitz. Bis zum Bahnhof erstreckt sich diese Anlage, durch die auch der Kunstwanderweg führt.\nTouristerei Wiesenburg\n14827 Wiesenburg/Mark, Schlossstr. 1\nTel.: 033849 79898\nwww.wiesenburgmark.de" },
+             { id: 10, name: "Naturparkzentrum Hoher Fläming", x: 1170, y: 1231, description: "Das Besucherinformationszentrum ist die zentrale Anlaufstelle für alle Gäste. Hier erhält man die besten Tipps für Exkursionen in den Hohen Fläming und kann Fahrräder ausleihen. Neben dem Fläming-Laden mit regionalen Produkten gibt es eine spannende Naturpark-Erlebnisausstellung und einen 'Garten der Sinne'. Direkt vor dem Naturparkzentrum hält der Bus der Burgenlinie.\nNaturparkzentrum Hoher Fläming\n14823 Raben, Brennereiweg 45\nTel.: 033848 60004\nwww.flaeming.net" },
+             { id: 11, name: "Raben mit Burg Rabenstein", x: 1124, y: 1329, description: "Auf dem 'Steilen Hagen' liegt die südlichste der Flämingburgen, die Höhenburg Rabenstein. Von der Burg führt ein Erlebnispfad durch das Naturschutzgebiet Rabenstein hinunter ins Dorf und bis zum Naturparkzentrum.\nDie tagsüber offene Feldsteinkirche kann auch besucht werden.\nDer Gasthof Hemmerling bewirtet täglich außer montags seine Gäste." },
+             { id: 12, name: "Niemegk", x: 1624, y: 1135, description: "Die Kirche St. Johannis und das alte Rathaus prägen das Stadtzentrum. Vom Kirchturm bietet sich ein schöner Ausblick auf die Hügelketten des Fläming. Ein imposanter Wasserturm, der heute ein Brausemuseum, einen Regionalladen und eine Likörmanufaktur beherbergt, liegen am südlichen Ortsausgang auf dem Rundwanderweg 44.\nEin Ausflug mit dem Rad lohnt sich von Niemegk aus auf der Feldsteinkirchenradtour, die zu sieben flämingtypischen Feldsteinkirchen führt." },
+             { id: 13, name: "Flämingbuchen", x: 654, y: 1171, description: "In dem großen Waldgebiet der Brandsheide sind einige Inseln aus Buchen zu finden, wie in den Naturschutzgebieten 'Flämingbuchen' und 'Spring'. Auf den Rundwanderwegen 70 oder 71 lassen sich diese landschaftlichen Höhepunkte des Naturparks erleben. Startpunkte sind die Bahnhöfe Wiesenburg/Mark oder Medewitz, die am RE 7 liegen. Auf dem Findlingswanderweg warten größere und kleinere Findlinge darauf entdeckt zu werden." },
+             // POI 14: Corrected '111Ο' to '1110' - Assuming the 'O' was a typo for '0'
+             { id: 14, name: "Brautrummel mit Riesenstein", x: 1110, y: 1023, description: "Wie eine Sage berichtet, ertrank ein junges Brautpaar nach einem Gewitterregen in der Rummel, einem Trockental.\nHeute kann man auf einer Rundwanderung zum Riesenstein die besondere Natur in der Rummel erleben, Familienfotos auf dem Riesenstein schießen, ein Picknick im Grünen genießen und anschließend ein Nickerchen auf dem großen Feldbett machen." },
+             { id: 15, name: "Neuendorfer Rummel", x: 1482, y: 1309, description: "Die Rummeln, verzweigte, enge Trockentälchen, entstanden nach der Eiszeit und wurden durch Wassererosion stetig weiter vertieft. Wie grüne, bewaldete Finger strecken sie sich weit in die Agrarlandschaft hinein.\nÜber den Burgenwanderweg oder den Rundwanderweg 40 kann man die üppig bewachsene und steilwandige Neuendorfer Rummel durchwandern." },
+             { id: 16, name: "Garrey mit Aussichtsplattform", x: 1494, y: 1427, description: "Die Landschaft rings um Garrey bietet fantastische Ausblicke auch über Teile des sachsen-anhaltinischen Naturparks. Deshalb 'krönt' eine Aussichtsplattform das alte Wasserwerk, das aufwändig restauriert wurde und in dem sich eine kleine Ausstellung befindet.\nDer Ausflug lässt sich sehr gut mit einer Wanderung in die Neuendorfer Rummel und einer Einkehr ins Café Lehmann in Garrey verbinden." }
+        ];
+        console.log(`Loaded ${pointsOfInterest.length} POIs with updated coordinates.`);
+
+        // --- Game State ---
+        // Variables tracking the helicopter's current status and controls
+        let helicopterState = {
+            x: startX,          // Current horizontal position (pixels)
+            y: startY,          // Current vertical position (pixels)
+            angle: -90,         // Current angle in degrees (0=right, -90=up, 90=down, 180=left)
+            speed: 0            // Current speed
+        };
+        let controls = {
+            turnLeft: false,    // Is ArrowLeft being pressed?
+            turnRight: false,   // Is ArrowRight being pressed?
+            pitchDown: false,   // Is ArrowUp being pressed? (Pitches nose down -> accelerates)
+            pitchUp: false,     // Is ArrowDown being pressed? (Pitches nose up -> decelerates)
+            applyThrust: false  // Is Control being pressed? (Main thrust)
+        };
+        let lastTimestamp = 0;      // Timestamp of the previous frame for calculating delta time
+        let gameReady = false;      // Flag: Is the map image loaded and ready?
+        let currentNearbyPOI = null;// Reference to the POI the helicopter is currently near
+        let gameState = 'FLYING';   // Current state: 'FLYING', 'NEAR_POI', 'SHOWING_INFO'
+
+        // --- Image Loading Check ---
+        // Handles successful map image loading
+        mapImage.onload = () => {
+            console.log("DEBUG: mapImage.onload fired!");
+            debugInfo.style.display = 'none'; // Hide any previous error message
+            mapImage.classList.remove('loading', 'error'); // Remove loading/error styles
+            gameReady = true; // Allow the game loop to start updating/rendering
+            console.log("DEBUG: gameReady set to true.");
+
+            // Optional: Check if loaded image dimensions match configured dimensions
+            if (mapImage.naturalWidth !== MAP_WIDTH || mapImage.naturalHeight !== MAP_HEIGHT) {
+                console.warn(`Map image actual size (${mapImage.naturalWidth}x${mapImage.naturalHeight}) differs from configured size (${MAP_WIDTH}x${MAP_HEIGHT})!`);
+                debugInfo.textContent = `Warning: Map size mismatch! Expected ${MAP_WIDTH}x${MAP_HEIGHT}, got ${mapImage.naturalWidth}x${mapImage.naturalHeight}. Check CSS/JS constants.`;
+                debugInfo.style.backgroundColor = 'rgba(255, 165, 0, 0.7)'; // Orange warning
+                debugInfo.style.display = 'block';
+            } else {
+                 console.log("DEBUG: Map dimensions match configuration.");
+            }
+        };
+        // Handles errors during map image loading
+        mapImage.onerror = () => {
+            console.error("DEBUG: mapImage.onerror fired!");
+            debugInfo.textContent = "Error loading map image! Check: 1. Name='hoher_flaeming_map.jpg'? 2. SAME folder as HTML? 3. Check Console & Network tab (F12).";
+            debugInfo.style.display = 'block'; // Show error message
+            mapImage.classList.remove('loading');
+            mapImage.classList.add('error'); // Apply error styling
+            gameReady = false; // Prevent game from running
+            console.log("DEBUG: gameReady is false due to image error.");
+        };
+        // Handle cases where the image might already be cached/complete when the script runs
+        if (mapImage.complete && mapImage.naturalWidth > 0) {
+             console.log("DEBUG: Image was already complete, triggering onload logic.");
+             mapImage.onload(); // Manually trigger onload if already loaded successfully
+        } else if (mapImage.complete) { // Complete but no size means error (e.g., 404)
+             console.log("DEBUG: Image was already complete but has no size, triggering onerror logic.");
+             mapImage.onerror(); // Manually trigger onerror if already failed
+        } else {
+             console.log("DEBUG: Image not yet complete, waiting for onload/onerror event.");
+             // Otherwise, the browser will trigger onload or onerror normally.
+        }
+
+
+        // --- Control Listeners ---
+        // Listen for key presses
+        document.addEventListener('keydown', (event) => {
+            // Ignore key presses if the info panel is showing
+            if (gameState === 'SHOWING_INFO') return;
+
+            // Special handling for 'L' key when near a POI
+            if ((event.key === 'l' || event.key === 'L') && gameState === 'NEAR_POI' && currentNearbyPOI) {
+                event.preventDefault(); // Prevent default browser action for 'L'
+                landAndShowInfo(currentNearbyPOI);
+                return; // Stop further processing for this key event
+            }
+
+            // Handle movement/thrust keys
+            switch (event.key) {
+                case 'ArrowLeft': controls.turnLeft = true; break;
+                case 'ArrowRight': controls.turnRight = true; break;
+                case 'ArrowUp': controls.pitchDown = true; break; // Up arrow pitches nose down
+                case 'ArrowDown': controls.pitchUp = true; break; // Down arrow pitches nose up
+                case 'Control': controls.applyThrust = true; break;
+            }
+        });
+        // Listen for key releases
+        document.addEventListener('keyup', (event) => {
+             // Ignore key releases if the info panel is showing (though less critical than keydown)
+            if (gameState === 'SHOWING_INFO') return;
+
+            switch (event.key) {
+                case 'ArrowLeft': controls.turnLeft = false; break;
+                case 'ArrowRight': controls.turnRight = false; break;
+                case 'ArrowUp': controls.pitchDown = false; break;
+                case 'ArrowDown': controls.pitchUp = false; break;
+                case 'Control': controls.applyThrust = false; break;
+            }
+        });
+        // Listen for clicks on the "Return to Flight" button
+        returnButton.addEventListener('click', hideInfoAndResumeFlight);
+
+        // --- Game Loop ---
+        // The main function that runs repeatedly to update and draw the game
+        function gameLoop(timestamp) {
+            // Calculate time elapsed since the last frame (delta time, dt)
+            if (!lastTimestamp) lastTimestamp = timestamp;
+            const deltaTime = (timestamp - lastTimestamp) / (1000 / 60); // Normalize to 60 FPS baseline
+            lastTimestamp = timestamp;
+
+            // Only update and render if the game is ready, not showing info, and deltaTime is reasonable
+            if (gameReady && gameState !== 'SHOWING_INFO' && deltaTime > 0 && deltaTime < 10) { // Added sanity check for deltaTime
+                update(deltaTime); // Update game state (physics, position)
+                render();          // Draw the current state to the screen
+            } else if (gameState === 'SHOWING_INFO') {
+                // Game is paused while showing info, do nothing here
+            }
+
+            // Request the next frame
+            requestAnimationFrame(gameLoop);
+        }
+
+        // --- Update Logic ---
+        // Calculates the helicopter's new state based on controls and physics
+        function update(dt) {
+            // --- Rotation ---
+            if (controls.turnLeft) helicopterState.angle -= turnRate * dt;
+            if (controls.turnRight) helicopterState.angle += turnRate * dt;
+            helicopterState.angle = (helicopterState.angle + 360) % 360; // Keep angle between 0 and 360
+
+            // --- Speed / Acceleration ---
+            let acceleration = 0;
+            if (controls.applyThrust) acceleration += thrustPower;
+            if (controls.pitchDown) acceleration += pitchPower; // Pitching down increases speed
+            if (controls.pitchUp) acceleration -= pitchPower;   // Pitching up decreases speed
+
+            helicopterState.speed += acceleration * dt;
+            helicopterState.speed *= Math.pow(drag, dt); // Apply drag (exponential decay)
+
+            // Stop if speed is very low and not accelerating
+            if (helicopterState.speed < minSpeed && acceleration <= 0) {
+                helicopterState.speed = 0;
+            }
+            // Clamp speed between 0 and maxSpeed
+            helicopterState.speed = Math.max(0, Math.min(helicopterState.speed, maxSpeed));
+
+            // --- Movement ---
+            // Convert angle to radians for trigonometric functions
+            const angleRad = helicopterState.angle * (Math.PI / 180);
+            // Calculate velocity components based on speed and angle
+            const vx = Math.cos(angleRad) * helicopterState.speed;
+            const vy = Math.sin(angleRad) * helicopterState.speed;
+            // Update position based on velocity and delta time
+            helicopterState.x += vx * dt;
+            helicopterState.y += vy * dt;
+
+            // --- Boundary Collision ---
+            // Prevent helicopter from going outside map boundaries
+            helicopterState.x = Math.max(0, Math.min(MAP_WIDTH, helicopterState.x));
+            helicopterState.y = Math.max(0, Math.min(MAP_HEIGHT, helicopterState.y));
+
+            // --- POI Detection ---
+            let foundNearbyPOI = null;
+            for (const poi of pointsOfInterest) {
+                const dx = helicopterState.x - poi.x;
+                const dy = helicopterState.y - poi.y;
+                const distance = Math.sqrt(dx * dx + dy * dy); // Pythagorean theorem
+
+                if (distance < landingRadius) {
+                    foundNearbyPOI = poi;
+                    break; // Found one, no need to check others
+                }
+            }
+
+            // --- Update Game State based on POI proximity ---
+            if (foundNearbyPOI) {
+                 if (gameState === 'FLYING') { // Only log transition once
+                     console.log(`DEBUG: Near POI ${foundNearbyPOI.id}: ${foundNearbyPOI.name}`);
+                 }
+                gameState = 'NEAR_POI';
+                currentNearbyPOI = foundNearbyPOI;
+                poiNameSpan.textContent = foundNearbyPOI.name; // Update indicator text
+                landIndicator.style.display = 'block'; // Show landing indicator
+                landPrompt.style.display = 'inline'; // Show 'Press L' prompt
+            } else {
+                 if (gameState === 'NEAR_POI') { // Only log transition once
+                     console.log("DEBUG: Moved away from POI");
+                     landIndicator.style.display = 'none'; // Hide indicator
+                     landPrompt.style.display = 'none'; // Hide 'Press L' prompt
+                     currentNearbyPOI = null;
+                 }
+                gameState = 'FLYING'; // Set state back to flying if not near any POI
+            }
+        }
+
+        // --- Render Logic ---
+        // Updates the visual representation of the helicopter and UI text
+        function render() {
+            // Update helicopter position on screen
+            helicopterElement.style.left = `${helicopterState.x}px`;
+            helicopterElement.style.top = `${helicopterState.y}px`;
+
+            // Update helicopter rotation (add 90 because 0 degrees in CSS is right, but our 0 is up)
+            // The helicopter emoji faces upwards, so angle 0 (right) needs visual rotation +90deg.
+            // Angle -90 (up) needs visual rotation 0deg.
+            const visualAngle = helicopterState.angle + 90;
+            helicopterElement.style.transform = `translate(-50%, -50%) rotate(${visualAngle}deg)`;
+
+            // Update speed and angle info in the UI
+            speedInfo.textContent = helicopterState.speed.toFixed(2);
+            // Display angle as 0-359 degrees, with 0 being North (up)
+            let displayAngle = Math.round((helicopterState.angle + 90 + 360) % 360);
+            angleInfo.textContent = `${displayAngle}°`;
+        }
+
+        // --- Landing and Info Panel Functions ---
+        // Called when 'L' is pressed near a POI
+        function landAndShowInfo(poi) {
+            console.log(`DEBUG: Landing at POI ${poi.id}`);
+            gameState = 'SHOWING_INFO'; // Pause game updates
+            currentNearbyPOI = poi; // Store which POI we landed at
+            helicopterState.speed = 0; // Stop the helicopter
+            // Reset controls just in case keys were held down
+            controls.applyThrust = false;
+            controls.pitchDown = false;
+            controls.pitchUp = false;
+
+            // Hide landing prompts
+            landIndicator.style.display = 'none';
+            landPrompt.style.display = 'none';
+
+            // Populate and show the info panel
+            infoTitle.textContent = `${poi.id}. ${poi.name}`;
+            // Replace newline characters (\n) with HTML line breaks (<br>) for display
+            infoDescription.innerHTML = poi.description.replace(/\n/g, '<br>');
+            mapContainer.style.opacity = '0'; // Fade out map
+            infoPanel.classList.add('visible'); // Fade in info panel
+        }
+
+        // Called when the "Return to Flight" button is clicked
+        function hideInfoAndResumeFlight() {
+            if (!currentNearbyPOI) return; // Should not happen, but safety check
+
+            console.log(`DEBUG: Resuming flight from POI ${currentNearbyPOI.id}`);
+            infoPanel.classList.remove('visible'); // Fade out info panel
+            mapContainer.style.opacity = '1'; // Fade in map
+
+            // Reset helicopter position to the POI center and stop it
+            helicopterState.x = currentNearbyPOI.x;
+            helicopterState.y = currentNearbyPOI.y;
+            helicopterState.speed = 0;
+            // Note: We don't reset currentNearbyPOI here, update() will handle it when player moves away
+
+            gameState = 'FLYING'; // Resume game updates
+        }
+
+        // --- Start Game ---
+        // Initial call to start the game loop
+        console.log("DEBUG: Starting game loop...");
+        requestAnimationFrame(gameLoop);
+    </script>
+</body>
+</html>
+:flex;justify-content:center;align-items:center;height:100vh;font-family:sans-serif}#map-container{position:relative;/* !!! SET THESE TO YOUR MAP IMAGE'S EXACT DIMENSIONS !!! */width:2048px;height:1448px;/* !!! END OF DIMENSIONS !!! */overflow:hidden;cursor:crosshair;border:2px solid black;background-color:#555;transition:opacity .5s ease-in-out}#map-image{display:block;width:100%;height:100%;opacity:1;transition:opacity .5s}#map-image.loading{opacity:0}#map-image.error{opacity:.2}#helicopter{position:absolute;top:50%;left:50%;font-size:30px;transform:translate(-50%,-50%) rotate(0deg);transform-origin:center center;transition:transform .05s linear;z-index:10;pointer-events:none}#info{position:absolute;top:10px;left:10px;background-color:rgba(0,0,0,.7);color:#fff;padding:8px;border-radius:5px;font-size:14px;z-index:30}#debug-info{position:absolute;bottom:10px;left:10px;background-color:rgba(255,0,0,.7);color:#fff;padding:5px;border-radius:3px;font-size:12px;z-index:30;display:none}#land-indicator{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);background-color:rgba(0,100,0,.8);color:#fff;padding:8px 15px;border-radius:5px;font-size:16px;font-weight:700;z-index:20;display:none;text-align:center}#info-panel{position:absolute;top:0;left:0;width:100%;height:100%;background-color:rgba(0,0,0,.9);display:flex;justify-content:center;align-items:center;opacity:0;visibility:hidden;transition:opacity .5s ease-in-out,visibility 0s .5s;z-index:25;pointer-events:none}#info-panel.visible{opacity:1;visibility:visible;transition-delay:0s;pointer-events:auto}#info-content{background-color:#f4f4f4;color:#333;padding:30px;border-radius:10px;max-width:80%;max-height:80%;overflow-y:auto;box-shadow:0 5px 15px rgba(0,0,0,.3);position:relative}#info-content h2{margin-top:0;color:#555;border-bottom:1px solid #ccc;padding-bottom:10px}#return-button{display:block;margin:20px auto 0;padding:10px 20px;font-size:16px;font-weight:700;color:#fff;background-color:#007bff;border:none;border-radius:5px;cursor:pointer;transition:background-color .2s}#return-button:hover{background-color:#0056b3}
     </style>
 </head>
 <body>
